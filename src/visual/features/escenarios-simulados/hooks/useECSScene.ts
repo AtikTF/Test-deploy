@@ -7,9 +7,8 @@ import {
   DispositivoComponent,
   EspacioComponent,
 } from "../../../../ecs/components";
-import type { EscenarioMock } from "../../../types/EscenarioTypes";
 import { ScenarioBuilder } from "../../../../ecs/utils/ScenarioBuilder";
-import { escenarioBase } from "../../../../escenarios/escenarioBase";
+import { useEscenarioActual } from "../../../common/contexts/EscenarioContext";
 
 export interface ECSSceneEntity {
   id: Entidad;
@@ -21,7 +20,8 @@ export interface ECSSceneEntity {
   nombre?: string;
 }
 
-export function useECSScene(escenario?: EscenarioMock) {
+export function useECSScene() {
+  const escenario = useEscenarioActual();
   const [entities, setEntities] = useState<ECSSceneEntity[]>([]);
   const ecsManagerRef = useRef<ECSManager | null>(null);
   const builderRef = useRef<ScenarioBuilder | null>(null);
@@ -38,21 +38,20 @@ export function useECSScene(escenario?: EscenarioMock) {
     ecsManagerRef.current = ecsManager;
     const builder = new ScenarioBuilder(ecsManager);
 
-    // Construir el escenario desde el archivo proporcionado o usar el base por defecto
-    const escenarioAUsar = escenario ?? escenarioBase;
-    builder.construirDesdeArchivo(escenarioAUsar);
+    // Construir el escenario desde el context
+    builder.construirDesdeArchivo(escenario);
 
     builderRef.current = builder;
 
     console.log("Builder:", builder);
-    console.log("Escenario usado:", escenarioAUsar);
+    console.log("Escenario usado:", escenario);
 
     const result = builder.construir();
     const extractedEntities = extractEntitiesFromBuilder(result, ecsManager);
     setEntities(extractedEntities);
 
     console.log("Entidades extraídas:", extractedEntities);
-  }, []); // Solo ejecutar una vez al montar el componente
+  }, [escenario]); // Re-ejecutar cuando cambie el escenario
 
   return {
     entities,

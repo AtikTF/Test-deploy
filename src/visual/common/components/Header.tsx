@@ -4,16 +4,15 @@ import NavigationLink from './Navigation';
 import DevicesIcon from '../icons/DevicesIcon';
 import OfficeIcon from '../icons/OfficeIcon';
 import EstrellasIcon from '../icons/EstrellasIcon';
+import { useEscenarioActual } from '../contexts/EscenarioContext';
 
-interface HeaderProps {
-    title?: string;
-}
+const Header: React.FC = () => {
+    const escenario = useEscenarioActual();
 
-const Header: React.FC<HeaderProps> = ({ title }) => {
     return (
         <header className={styles.header}>
             <div className={styles.titleContainer}>
-                <h1 className={styles.title}>{title}</h1>
+                <h1 className={styles.title}>{escenario.titulo}</h1>
                 <div className={styles.rightSideSection}>
                     <span aria-label='Animación actualmente pausada'>
                         Pausado
