@@ -7,11 +7,17 @@ import type {
 
 /**
  * Configuraciones por defecto para la escena 3D
- * Centraliza todas las configuraciones para facilitar el mantenimiento
  */
 
 export const DEFAULT_MODEL_CONFIG: ModelConfig = {
   path: "/assets/models/computadora.gltf",
+  position: [0, 0, 0],
+  rotation: [0, 0, 0],
+  scale: 1,
+};
+
+export const ESCRITORIO_CONFIG: ModelConfig = {
+  path: "/assets/models/escritorio.gltf",
   position: [0, 0, 0],
   rotation: [0, 0, 0],
   scale: 1,

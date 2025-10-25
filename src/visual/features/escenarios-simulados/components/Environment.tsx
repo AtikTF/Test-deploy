@@ -8,9 +8,10 @@ interface EnvironmentProps {
 }
 
 /**
- * Componente para elementos del entorno 3D (grid, ejes, etc.)
- * Útil para desarrollo y depuración
+ * Componente útil para depuración. Utiliza grids
+ * y ejes para ayudar en la colocación de objetos
  */
+
 const Environment: React.FC<EnvironmentProps> = ({
     showGrid = false,
     showAxes = false,
@@ -28,8 +29,6 @@ const Environment: React.FC<EnvironmentProps> = ({
             {showAxes && (
                 <axesHelper args={[5]} />
             )}
-
-            {/* Plano de suelo para recibir sombras */}
             <mesh
                 rotation={[-Math.PI / 2, 0, 0]}
                 position={[0, -0.01, 0]}
