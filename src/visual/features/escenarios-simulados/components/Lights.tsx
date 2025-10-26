@@ -8,7 +8,7 @@ interface LightsProps {
 }
 
 /**
- * Componente modular para el sistema de iluminación de la escena
+ * Componente para el sistema de iluminación de la escena
  * Configura luz ambiente y direccional con soporte para sombras
  */
 const Lights: React.FC<LightsProps> = ({
@@ -19,10 +19,8 @@ const Lights: React.FC<LightsProps> = ({
 }) => {
     return (
         <>
-            {/* Luz ambiente para iluminación general */}
             <ambientLight intensity={ambientIntensity} />
 
-            {/* Luz direccional principal */}
             <directionalLight
                 position={directionalPosition}
                 intensity={directionalIntensity}
@@ -36,7 +34,6 @@ const Lights: React.FC<LightsProps> = ({
                 shadow-camera-bottom={-10}
             />
 
-            {/* Luz de relleno suave desde abajo */}
             <hemisphereLight
                 args={['#ffffff', '#444444', 0.3]}
                 position={[0, 1, 0]}

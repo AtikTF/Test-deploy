@@ -1,23 +1,26 @@
 import React from 'react';
 import styles from '../styles/Escena3D.module.css';
-import Controles3D from './Controles3D';
 import Scene3DCanvas from './Scene3DCanvas';
-import Model3D from './Model3D';
 import CameraControls from './CameraControls';
 import Lights from './Lights';
 import Environment from './Environment';
+import { useECSScene } from '../hooks/useECSScene';
 import {
-    DEFAULT_MODEL_CONFIG,
     DEFAULT_LIGHT_CONFIG,
     DEFAULT_CONTROLS_CONFIG,
     DEFAULT_ENVIRONMENT_CONFIG,
 } from '../config/scene3DConfig';
+import ECSSceneRenderer from './ECSSceneRenderer';
 
-
+/**
+ * Componente principal de la escena 3D
+ * Orquesta la visualización 3D del escenario usando ECS con luces y controles 
+ */
 const Escena3D: React.FC = () => {
+    const { entities } = useECSScene();
+
     return (
         <section className={styles.vista3D} aria-label="Vista 3D de la escena">
-            <Controles3D />
             <Scene3DCanvas className={styles.canvas}>
                 <Lights
                     ambientIntensity={DEFAULT_LIGHT_CONFIG.ambientIntensity}
@@ -25,13 +28,9 @@ const Escena3D: React.FC = () => {
                     directionalPosition={DEFAULT_LIGHT_CONFIG.directionalPosition}
                     enableShadows={DEFAULT_LIGHT_CONFIG.enableShadows}
                 />
-                <Model3D
-                    modelPath={DEFAULT_MODEL_CONFIG.path}
-                    position={DEFAULT_MODEL_CONFIG.position}
-                    rotation={DEFAULT_MODEL_CONFIG.rotation}
-                    scale={DEFAULT_MODEL_CONFIG.scale}
+                <ECSSceneRenderer
+                    entities={entities}
                 />
-
                 <CameraControls
                     enableZoom={DEFAULT_CONTROLS_CONFIG.enableZoom}
                     enablePan={DEFAULT_CONTROLS_CONFIG.enablePan}

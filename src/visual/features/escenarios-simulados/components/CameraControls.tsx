@@ -15,9 +15,9 @@ interface CameraControlsProps {
 }
 
 /**
- * Componente modular para controles de cámara orbital
- * Permite configurar restricciones y comportamiento de la cámara
+ * Componente para controles de cámara orbital
  */
+
 const CameraControls: React.FC<CameraControlsProps> = ({
     enableZoom = true,
     enablePan = true,

@@ -4,20 +4,27 @@ import NavigationLink from './Navigation';
 import DevicesIcon from '../icons/DevicesIcon';
 import OfficeIcon from '../icons/OfficeIcon';
 import EstrellasIcon from '../icons/EstrellasIcon';
+import { useEscenarioActual } from '../contexts/EscenarioContext';
+import {useECSScene} from "../../features/escenarios-simulados/hooks/useECSScene";
+import { useEffect } from 'react';
 
-interface HeaderProps {
-    title?: string;
-}
-
-const Header: React.FC<HeaderProps> = ({ title }) => {
+const Header: React.FC = () => {
+    const escenario = useEscenarioActual();
+    const {pause, resume, iniciar, isPaused} = useECSScene();
+    useEffect(() => {
+        // iniciar la simulación una sola vez al montar
+        iniciar && iniciar();
+    }, [iniciar]);
     return (
         <header className={styles.header}>
             <div className={styles.titleContainer}>
-                <h1 className={styles.title}>{title}</h1>
+                <h1 className={styles.title}>{escenario.titulo}</h1>
                 <div className={styles.rightSideSection}>
-                    <span aria-label='Animación actualmente pausada'>
-                        Pausado
+                    <span aria-label='Estado de la animación'>
+                        {isPaused && isPaused() ? 'Pausado' : 'En ejecución'}
                     </span>
+                    <button onClick={()=>{pause && pause()}}>Pausar</button>
+                    <button onClick={()=>{resume && resume()}}>Reanudar</button>
                     <button>
                         Chatbot <EstrellasIcon />
                     </button>

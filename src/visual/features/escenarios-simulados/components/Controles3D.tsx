@@ -1,5 +1,10 @@
 import styles from "../styles/Escena3D.module.css";
 
+/**
+ * Componente para controles 3D adicionales en la interfaz, 
+ * como ir al siguiente usuario, dispositivo, etc.
+ */
+
 export default function Controles3D() {
     return (
         <aside className={styles.controles3D} aria-label="Controles de vista 3D">
