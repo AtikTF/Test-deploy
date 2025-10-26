@@ -6,3 +6,4 @@ export * from "./EspacioComponent";
 export * from "./OficinaComponent";
 export * from "./ZonaComponent";
 export * from "./EscenarioComponent";
+export * from "./TiempoComponent";
