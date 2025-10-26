@@ -1,0 +1,125 @@
+.contextPreview {
+  background-color: var(--surface-primary);
+  border: 1px solid var(--blue);
+  border-radius: var(--border-radius);
+  padding: 10px;
+  margin: 0 12px 12px 12px;
+  animation: slideDown 0.3s ease-out;
+  flex-shrink: 0;
+}
+
+.contextPreviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.contextLabel {
+  font-size: 0.85rem;
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.contextRemoveBtn {
+  all: unset;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.contextRemoveBtn:hover {
+  background-color: #ff4444;
+  color: var(--text-primary);
+}
+
+.contextPreviewContent {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.contextPreviewImage {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: calc(var(--border-radius) / 2);
+  border: 1px solid var(--border-primary);
+  flex-shrink: 0;
+}
+
+.contextPreviewInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.contextPreviewInfo strong {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contextAriaLabel {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .contextPreview {
+    padding: 8px;
+    margin: 0 10px 10px 10px;
+  }
+  
+  .contextPreviewImage {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .contextLabel {
+    font-size: 0.8rem;
+  }
+  
+  .contextPreviewInfo strong {
+    font-size: 0.85rem;
+  }
+  
+  .contextAriaLabel {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .contextPreview {
+    padding: 6px;
+    margin: 0 8px 8px 8px;
+  }
+}

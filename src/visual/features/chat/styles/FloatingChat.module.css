@@ -1,0 +1,57 @@
+.floatingChatWrapper {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  width: 420px;
+  max-width: calc(100vw - 40px);
+  height: 600px;
+  max-height: calc(100vh - 100px);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease-out;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.floatingChatWrapper.hidden {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  pointer-events: none;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .floatingChatWrapper {
+    width: calc(100vw - 32px);
+    height: 500px;
+    bottom: 16px;
+    right: 16px;
+    max-height: calc(100vh - 120px);
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .floatingChatWrapper {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 75vh;
+    max-height: 75vh;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+  }
+}
