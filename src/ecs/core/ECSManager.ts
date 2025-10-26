@@ -69,6 +69,64 @@ export class ECSManager {
         }
     }
 
+    // Snapshot / restauración: serializa el estado actual de todas las entidades y componentes.
+    // Nota: Implementación simple que intenta serializar las propiedades públicas de los componentes.
+    /*public serializarEstado(): string {
+        const data: any = {
+            idSiguienteEntidad: this.idSiguienteEntidad,
+            entidades: [] as any[],
+        };
+
+        for (const [entidad, container] of this.entidades.entries()) {
+            const comps: any = {};
+            // iterar sobre las entradas del mapa interno
+            // no hay API pública para enumerar, así que usamos toString de la función constructor como key
+            // accedemos por reflexión: (container as any).map
+            const internalMap = (container as any).map as Map<Function, any> | undefined;
+            if (!internalMap) continue;
+            for (const [cls, comp] of internalMap.entries()) {
+                try {
+                    comps[cls.name] = JSON.parse(JSON.stringify(comp));
+                } catch (e) {
+                    comps[cls.name] = null;
+                }
+            }
+
+            data.entidades.push({ entidad, componentes: comps });
+        }
+
+        return JSON.stringify(data);
+    }
+
+    public restaurarEstado(serialized: string): void {
+        try {
+            const data = JSON.parse(serialized);
+            // limpiar estado actual
+            this.entidades.clear();
+            this.sistemas.forEach((set) => set.clear());
+
+            this.idSiguienteEntidad = data.idSiguienteEntidad || 0;
+
+            // Restauración mínima: crear las entidades y añadir componentes como objetos planos
+            for (const item of data.entidades) {
+                const entidad: Entidad = item.entidad;
+                const container = new ComponenteContainer();
+                // No podemos reconstruir instancias de clases específicas sin un mapeo.
+                // En su lugar guardamos los objetos serializados bajo un símbolo genérico
+                (container as any).map = new Map();
+                for (const [clsName, compObj] of Object.entries(item.componentes)) {
+                    // Guardar el objeto serializado tal cual; sistemas que esperen clases concretas
+                    // deberán ser capaces de leer las propiedades desde objetos planos también.
+                    (container as any).map.set({ name: clsName }, compObj as any);
+                }
+
+                this.entidades.set(entidad, container as any);
+            }
+        } catch (e) {
+            console.error('Error al restaurar estado ECS:', e);
+        }
+    }*/
+
     // Para verificaciones internas
 
     private destruirEntidad(entidad: Entidad): void {

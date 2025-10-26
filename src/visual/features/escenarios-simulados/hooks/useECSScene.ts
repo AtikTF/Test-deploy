@@ -6,9 +6,11 @@ import {
   MuebleComponent,
   DispositivoComponent,
   EspacioComponent,
+  TiempoComponent,
 } from "../../../../ecs/components";
 import { ScenarioBuilder } from "../../../../ecs/utils/ScenarioBuilder";
 import { useEscenarioActual } from "../../../common/contexts/EscenarioContext";
+import { SistemaTiempo } from "../../../../ecs/systems";
 
 export interface ECSSceneEntity {
   id: Entidad;
@@ -27,21 +29,47 @@ export function useECSScene() {
   const builderRef = useRef<ScenarioBuilder | null>(null);
   const inicializadoRef = useRef(false);
 
+  // Usar un singleton a nivel de módulo para que múltiples hooks/componentes compartan el mismo ECS
+  // (Header y la escena deben controlar la misma simulación)
+  // Inicializamos perezosamente si no existe
+  if (!(globalThis as any).__simECS) {
+    const ecs = new ECSManager();
+    const timeEntity = ecs.agregarEntidad();
+    ecs.agregarComponente(timeEntity, new TiempoComponent());
+    const sistemaTiempo = new SistemaTiempo();
+    ecs.agregarSistema(sistemaTiempo);
+
+    // Almacenar en globalThis para accesibilidad entre componentes/hook invocaciones
+    (globalThis as any).__simECS = {
+      ecsManager: ecs,
+      timeEntity,
+      sistemaTiempo,
+      builder: null as ScenarioBuilder | null,
+    };
+  }
+
+  // Referencias al singleton
+  ecsManagerRef.current = (globalThis as any).__simECS.ecsManager as ECSManager;
+  const timeEntity = (globalThis as any).__simECS.timeEntity as Entidad;
+  const sistemaTiempo = (globalThis as any).__simECS.sistemaTiempo as SistemaTiempo;
+  builderRef.current = (globalThis as any).__simECS.builder as ScenarioBuilder | null;
+
   useEffect(() => {
     // Prevenir doble inicialización en React StrictMode
     if (inicializadoRef.current) {
       return;
     }
     inicializadoRef.current = true;
-    const ecsManager = new ECSManager();
-
-    ecsManagerRef.current = ecsManager;
+    
+    const ecsManager = ecsManagerRef.current!;
     const builder = new ScenarioBuilder(ecsManager);
 
     // Construir el escenario desde el context
     builder.construirDesdeArchivo(escenario);
 
     builderRef.current = builder;
+  // Guardar builder en singleton para posibles futuras referencias
+  (globalThis as any).__simECS.builder = builder;
 
     console.log("Builder:", builder);
     console.log("Escenario usado:", escenario);
@@ -57,6 +85,26 @@ export function useECSScene() {
     entities,
     ecsManager: ecsManagerRef.current,
     builder: builderRef.current,
+    iniciar:() => {
+      sistemaTiempo.iniciar(timeEntity);
+    },
+    pause:() =>{
+      console.log("useECSScene: pausar");
+      sistemaTiempo.pausar(timeEntity);
+    },
+    resume: () => {
+      console.log("useECSScene: reanudar");
+      sistemaTiempo.reanudar(timeEntity);
+    }
+    ,
+    isPaused: () => {
+      const ecs = ecsManagerRef.current;
+      if (!ecs) return false;
+      const cont = ecs.getComponentes(timeEntity);
+      if (!cont) return false;
+      const tiempo = cont.get(TiempoComponent);
+      return !!tiempo.pausado;
+    }
   };
 }
 
