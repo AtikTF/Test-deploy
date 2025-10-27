@@ -1,13 +1,8 @@
 import { useState, useEffect, /*useRef*/ } from "react";
-// import { ECSManager } from "../../../../ecs/core/ECSManager";
 import type { Entidad } from "../../../../ecs/core/Componente";
-
 import { getDispositivoHeight } from "../config/modelConfig";
-// import { ScenarioBuilder } from "../../../../ecs/utils/ScenarioBuilder";
 import { useEscenarioActual } from "../../../common/contexts/EscenarioContext";
 import { EscenarioController } from "../../../../ecs/controllers/EscenarioController";
-// import { SistemaTiempo } from "../../../../ecs/systems";
-// import { TiempoComponent } from "../../../../ecs/components";
 
 export interface ECSSceneEntity {
   id: Entidad;
