@@ -4,66 +4,101 @@ import { SistemaPresupuesto, SistemaTiempo } from "../systems";
 import { ScenarioBuilder } from "../utils/ScenarioBuilder";
 
 export class EscenarioController {
-    public escenario: any;
-    public escManager: ECSManager;
-    public builder!: ScenarioBuilder;
+  public escenario: any;
+  public escManager: ECSManager;
+  public builder!: ScenarioBuilder;
 
-    constructor(escenario: any){
-        this.escenario = escenario;
-        this.escManager = new ECSManager();
+  private entidadTiempo?: Entidad;
+  private sistemaTiempo?: SistemaTiempo;
+  private sistemaPresupuesto?: SistemaPresupuesto;
+  private entidadPresupuesto?: Entidad;
+
+  constructor(escenario: any) {
+    this.escenario = escenario;
+    this.escManager = new ECSManager();
+  }
+
+  public iniciarEscenario(): void {
+    this.builder = new ScenarioBuilder(this.escManager);
+    this.builder.construirDesdeArchivo(this.escenario);
+  }
+
+  public ejecutarTiempo(): any {
+    if (!this.entidadTiempo) {
+      this.entidadTiempo = this.escManager.agregarEntidad();
+      this.escManager.agregarComponente(
+        this.entidadTiempo,
+        new TiempoComponent()
+      );
+      this.sistemaTiempo = new SistemaTiempo();
+      this.escManager.agregarSistema(this.sistemaTiempo);
     }
 
-    public iniciarEscenario(): void {
-        this.builder = new ScenarioBuilder(this.escManager);
-        this.builder.construirDesdeArchivo(this.escenario); 
+    const iniciarTiempo = () =>
+      this.sistemaTiempo!.iniciar(this.entidadTiempo!);
+    const pausarTiempo = () => this.sistemaTiempo!.pausar(this.entidadTiempo!);
+    const reanudarTiempo = () =>
+      this.sistemaTiempo!.reanudar(this.entidadTiempo!);
+
+    return { iniciarTiempo, pausarTiempo, reanudarTiempo };
+  }
+
+  public estaTiempoPausado(): boolean {
+    if (!this.escManager || !this.entidadTiempo) {
+      return false;
     }
 
-    public ejecutarTiempo(): any {
-        if (!(globalThis as any).__simECS) {
-            const ecs = this.escManager;
-            const timeEntity = ecs.agregarEntidad();
-            ecs.agregarComponente(timeEntity, new TiempoComponent());
-            const sistemaTiempo = new SistemaTiempo();
-            ecs.agregarSistema(sistemaTiempo);
+    const cont = this.escManager.getComponentes(this.entidadTiempo);
+    if (!cont) return false;
 
-            // Almacenar en globalThis para accesibilidad entre componentes/hook invocaciones
-            (globalThis as any).__simECS = {
-              ecsManager: ecs,
-              timeEntity,
-              sistemaTiempo,
-              // builder: null as ScenarioBuilder | null,
-            };
-        }
+    const tiempo = cont.get(TiempoComponent);
+    return tiempo?.pausado ?? false;
+  }
 
-        this.escManager = (globalThis as any).__simECS.ecsManager as ECSManager;
-        const entidadTiempo = (globalThis as any).__simECS.timeEntity as Entidad;
-        const sistemaTiempo = (globalThis as any).__simECS.sistemaTiempo as SistemaTiempo;
-        
-        // Funciones relacionas al tiempo para ser expuestas
-        const iniciarTiempo = () => sistemaTiempo.iniciar(entidadTiempo);
-        const pausarTiempo = () => sistemaTiempo.pausar(entidadTiempo);
-        const reanudarTiempo = () => sistemaTiempo.reanudar(entidadTiempo);
-        const estaTiempoPausado = () => {
-            if(!this.escManager) return false;
-            const cont = this.escManager.getComponentes(entidadTiempo);
-            if (!cont) return false;
-            const tiempo = cont.get(TiempoComponent);
-            return !!tiempo.pausado;
-        }
-
-        return {iniciarTiempo, pausarTiempo, reanudarTiempo, estaTiempoPausado};
+  public get tiempoTranscurrido(): number {
+    if (!this.escManager || !this.entidadTiempo) {
+      return 0;
     }
 
-    public efectuarPresupuesto(montoInicial: number) : any{
-        const entidadPresupuesto = this.escManager.agregarEntidad();
-        this.escManager.agregarComponente(entidadPresupuesto, new PresupuestoComponent(montoInicial));
-        const sistemaPresupuesto = new SistemaPresupuesto();
-        this.escManager.agregarSistema(sistemaPresupuesto);
-        
-        const toggleConfiguracionWorkstation = (entidadWorkstation: Entidad, nombreConfig: string) =>{
-            sistemaPresupuesto.toggleConfiguracionWorkstation(entidadPresupuesto, entidadWorkstation, nombreConfig);
-        }
+    const cont = this.escManager.getComponentes(this.entidadTiempo);
+    if (!cont) return 0;
 
-        return { toggleConfiguracionWorkstation }
+    const tiempo = cont.get(TiempoComponent);
+    return tiempo?.transcurrido ?? 0;
+  }
+
+  /**
+   * Suscribe un callback a eventos del ECSManager
+   * @param eventName Nombre del evento (ej: 'tiempo:actualizado')
+   * @param callback Función a ejecutar cuando se emita el evento
+   * @returns Función para desuscribirse del evento
+   */
+  public on(eventName: string, callback: (data: any) => void): () => void {
+    return this.escManager.on(eventName, callback);
+  }
+
+  public efectuarPresupuesto(montoInicial: number): any {
+    if (!this.entidadPresupuesto) {
+      this.entidadPresupuesto = this.escManager.agregarEntidad();
+      this.escManager.agregarComponente(
+        this.entidadPresupuesto,
+        new PresupuestoComponent(montoInicial)
+      );
+      this.sistemaPresupuesto = new SistemaPresupuesto();
+      this.escManager.agregarSistema(this.sistemaPresupuesto);
     }
+
+    const toggleConfiguracionWorkstation = (
+      entidadWorkstation: Entidad,
+      nombreConfig: string
+    ) => {
+      this.sistemaPresupuesto!.toggleConfiguracionWorkstation(
+        this.entidadPresupuesto!,
+        entidadWorkstation,
+        nombreConfig
+      );
+    };
+
+    return { toggleConfiguracionWorkstation };
+  }
 }

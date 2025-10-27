@@ -1,4 +1,4 @@
-import { useState, useEffect, /*useRef*/ } from "react";
+import { useState, useEffect /*useRef*/, useMemo } from "react";
 import type { Entidad } from "../../../../ecs/core/Componente";
 import { getDispositivoHeight } from "../config/modelConfig";
 import { useEscenarioActual } from "../../../common/contexts/EscenarioContext";
@@ -35,18 +35,56 @@ interface ProcessedEntity {
 
 export function useECSScene() {
   const escenario = useEscenarioActual();
-  const [entities, setEntities] = useState<any>([]); 
+  const [entities, setEntities] = useState<any>([]);
+  const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0);
 
-  const escenarioController = new EscenarioController(escenario);
-  const { iniciarTiempo, pausarTiempo, reanudarTiempo, estaTiempoPausado } = escenarioController.ejecutarTiempo();
-  const { toggleConfiguracionWorkstation } = escenarioController.efectuarPresupuesto(escenario.presupuestoInicial);
+  const escenarioController = useMemo(
+    () => new EscenarioController(escenario),
+    [escenario]
+  );
+
+  const { iniciarTiempo, pausarTiempo, reanudarTiempo } =
+    escenarioController.ejecutarTiempo();
+
+  const { toggleConfiguracionWorkstation } =
+    escenarioController.efectuarPresupuesto(escenario.presupuestoInicial);
+
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-
-    escenarioController.iniciarEscenario()
+    escenarioController.iniciarEscenario();
     setEntities(escenarioController.builder.getEntidades());
+    setIsPaused(escenarioController.estaTiempoPausado());
 
-  }, [escenario]);
+    // Suscribirse a eventos de tiempo
+    const unsubscribeActualizado = escenarioController.on(
+      "tiempo:actualizado",
+      (data: { transcurrido: number; pausado: boolean }) => {
+        setTiempoTranscurrido(data.transcurrido);
+      }
+    );
+
+    const unsubscribePausado = escenarioController.on(
+      "tiempo:pausado",
+      (data: { transcurrido: number; pausado: boolean }) => {
+        setTiempoTranscurrido(data.transcurrido);
+      }
+    );
+
+    const unsubscribeReanudado = escenarioController.on(
+      "tiempo:reanudado",
+      (data: { transcurrido: number; pausado: boolean }) => {
+        setTiempoTranscurrido(data.transcurrido);
+      }
+    );
+
+    // desuscribirse cuando el componente se desmonte
+    return () => {
+      unsubscribeActualizado();
+      unsubscribePausado();
+      unsubscribeReanudado();
+    };
+  }, [escenarioController]);
 
   // procesar entidades desde los maps
   const processEntities = (): ProcessedEntity[] => {
@@ -96,23 +134,30 @@ export function useECSScene() {
 
     return processedEntities;
   };
- 
+
   return {
     entities,
     ecsManager: escenarioController.escManager,
     builder: escenarioController.builder,
     processEntities,
-    iniciar: () => { iniciarTiempo(); },
+    tiempoTranscurrido,
+    iniciar: () => {
+      iniciarTiempo();
+      setIsPaused(escenarioController.estaTiempoPausado());
+    },
     pause: () => {
-      console.log("useECSScene: pausar");
       pausarTiempo();
+      setIsPaused(true);
     },
     resume: () => {
-      console.log("useECSScene: reanudar");
       reanudarTiempo();
+      setIsPaused(false);
     },
-    isPaused: () => { estaTiempoPausado(); },
-    toggleConfigWorkstation: (entidadWorkstation: Entidad, nombreConfig: string) => {
+    isPaused,
+    toggleConfigWorkstation: (
+      entidadWorkstation: Entidad,
+      nombreConfig: string
+    ) => {
       toggleConfiguracionWorkstation(entidadWorkstation, nombreConfig);
     },
   };
