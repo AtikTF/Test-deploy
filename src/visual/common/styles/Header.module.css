@@ -6,6 +6,9 @@
 
   user-select: none;
 }
+.header button {
+  height: 43px !important;
+}
 .titleContainer {
   display: flex;
   justify-content: space-between;

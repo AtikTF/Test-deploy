@@ -2,15 +2,21 @@ import { useState, useMemo } from 'react';
 import styles from '../styles/PanelConfiguraciones.module.css';
 import CheckableItem from '../../../common/components/CheckableItem';
 import obtenerConfiguraciones from '../utils/obtenerConfiguraciones';
+import { useECSScene } from '../../escenarios-simulados/hooks/useECSScene';
+import { useEscenario } from '../../../common/contexts';
 
 export default function PanelConfiguraciones() {
     const configuraciones = useMemo(() => obtenerConfiguraciones(), []);
-
     const [checkedItems, setCheckedItems] = useState<boolean[]>(
         new Array(configuraciones.length).fill(false)
     );
 
-    const handleCheckChange = (index: number, checked: boolean) => {
+    const { toggleConfigWorkstation } = useECSScene();
+    const { dispositivoSeleccionado } = useEscenario();
+
+    const handleCheckChange = (index: number, checked: boolean, configuracion: string) => {
+        toggleConfigWorkstation((dispositivoSeleccionado as any).entidadId, configuracion);
+        console.log(`Toggle configuración: ${configuracion}, Nuevo estado: ${checked} para entidad: ${(dispositivoSeleccionado as any).entidadId} `);
         const newCheckedItems = [...checkedItems];
         newCheckedItems[index] = checked;
         setCheckedItems(newCheckedItems);
@@ -27,7 +33,7 @@ export default function PanelConfiguraciones() {
                     label={configuracion.configuracion}
                     price={configuracion.precio}
                     checked={checkedItems[index]}
-                    onChange={(checked) => handleCheckChange(index, checked)}
+                    onChange={(checked) => handleCheckChange(index, checked, configuracion.configuracion)}
                 />
             ))}
         </div>

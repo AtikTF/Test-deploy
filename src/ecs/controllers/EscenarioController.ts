@@ -13,9 +13,26 @@ export class EscenarioController {
   private sistemaPresupuesto?: SistemaPresupuesto;
   private entidadPresupuesto?: Entidad;
 
-  constructor(escenario: any) {
+  private static instance: EscenarioController | null = null;
+
+  private constructor(escenario: any) {
     this.escenario = escenario;
     this.escManager = new ECSManager();
+  }
+
+  // SINGLETON
+  public static getInstance(escenario?: any): EscenarioController {
+    if (!EscenarioController.instance) {
+      if (!escenario) {
+        throw new Error(
+          "Debe proporcionar un escenario para inicializar el controlador la primera vez."
+        );
+      }
+      EscenarioController.instance = new EscenarioController(escenario);
+    } else if (escenario) {
+      EscenarioController.instance.escenario = escenario;
+    }
+    return EscenarioController.instance;
   }
 
   public iniciarEscenario(): void {
@@ -100,5 +117,16 @@ export class EscenarioController {
     };
 
     return { toggleConfiguracionWorkstation };
+  }
+
+  public getPresupuestoActual(): number {
+    if (!this.escManager || !this.entidadPresupuesto) {
+      return 0;
+    }
+    const cont = this.escManager.getComponentes(this.entidadPresupuesto);
+    if (!cont) return 0;
+
+    const presupuesto = cont.get(PresupuestoComponent);
+    return presupuesto?.monto ?? 0;
   }
 }

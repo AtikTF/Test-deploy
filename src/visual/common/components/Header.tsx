@@ -11,16 +11,17 @@ import { formatearTiempo } from '../utils/formatearTiempo';
 
 const Header: React.FC = () => {
     const escenario = useEscenarioActual();
-    const { pause, resume, iniciar, isPaused, tiempoTranscurrido } = useECSScene();
+    const { pause, resume, iniciar, isPaused, tiempoTranscurrido, presupuesto } = useECSScene();
     useEffect(() => {
         iniciar && iniciar();
     }, [iniciar]);
-
+    useEffect(() => { }, [presupuesto])
     return (
         <header className={styles.header}>
             <div className={styles.titleContainer}>
                 <h1 className={styles.title}>{escenario.titulo}</h1>
                 <div className={styles.rightSideSection}>
+                    <span>Presupuesto: ${presupuesto}</span>
                     <span aria-label='Estado de la animación'>
                         {formatearTiempo(tiempoTranscurrido)}
                     </span>

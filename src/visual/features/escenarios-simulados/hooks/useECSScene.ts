@@ -1,17 +1,15 @@
-import { useState, useEffect /*useRef*/, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { Entidad } from "../../../../ecs/core/Componente";
 import { getDispositivoHeight } from "../config/modelConfig";
 import { useEscenarioActual } from "../../../common/contexts/EscenarioContext";
 import { EscenarioController } from "../../../../ecs/controllers/EscenarioController";
 
 export interface ECSSceneEntity {
-  id: Entidad;
+  entidadId: Entidad;
+  objetoConTipo: { tipo: string; [key: string]: any };
   position: [number, number, number];
-  rotation: number;
-  type: "espacio" | "dispositivo";
-  muebleTipo?: string;
-  dispositivoTipo?: string;
-  nombre?: string;
+  rotacionY: number;
+  entidadCompleta: any;
 }
 
 interface Transform {
@@ -26,20 +24,13 @@ interface ObjetoConTipo {
   [key: string]: any;
 }
 
-interface ProcessedEntity {
-  objetoConTipo: ObjetoConTipo;
-  position: [number, number, number];
-  rotacionY: number;
-  entityIndex: number;
-}
-
 export function useECSScene() {
   const escenario = useEscenarioActual();
-  const [entities, setEntities] = useState<any>([]);
+  const [entities, setEntities] = useState<Map<Entidad, any>>(new Map());
   const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0);
 
   const escenarioController = useMemo(
-    () => new EscenarioController(escenario),
+    () => EscenarioController.getInstance(escenario),
     [escenario]
   );
 
@@ -50,13 +41,21 @@ export function useECSScene() {
     escenarioController.efectuarPresupuesto(escenario.presupuestoInicial);
 
   const [isPaused, setIsPaused] = useState(false);
-
+  const [presupuesto, setPresupuesto] = useState(0);
   useEffect(() => {
     escenarioController.iniciarEscenario();
     setEntities(escenarioController.builder.getEntidades());
     setIsPaused(escenarioController.estaTiempoPausado());
 
-    // Suscribirse a eventos de tiempo
+    setPresupuesto(escenarioController.getPresupuestoActual());
+
+    const unsubscribePresupuesto = escenarioController.on(
+      "presupuesto:actualizado",
+      (data: { presupuesto: number }) => {
+        setPresupuesto(data.presupuesto);
+      }
+    );
+
     const unsubscribeActualizado = escenarioController.on(
       "tiempo:actualizado",
       (data: { transcurrido: number; pausado: boolean }) => {
@@ -78,61 +77,57 @@ export function useECSScene() {
       }
     );
 
-    // desuscribirse cuando el componente se desmonte
     return () => {
+      unsubscribePresupuesto();
       unsubscribeActualizado();
       unsubscribePausado();
       unsubscribeReanudado();
     };
   }, [escenarioController]);
 
-  // procesar entidades desde los maps
-  const processEntities = (): ProcessedEntity[] => {
+  /**
+   * Devuelve un array de entidades listo para render 3D
+   * Sin filtrar ni perder datos, mantiene referencia a la entidad original
+   */
+  const processEntities = (): ECSSceneEntity[] => {
     if (!entities) return [];
 
-    const processedEntities: ProcessedEntity[] = [];
+    return Array.from(entities.entries()).map(
+      ([entidadId, entidadObjeto]): ECSSceneEntity => {
+        const componentes = Array.from(entidadObjeto.map.values());
 
-    Array.from(entities.values()).forEach((value: any, entityIndex: number) => {
-      const componentes = Array.from(value.map.values()) as any[];
+        const objetoConTipo = componentes.find(
+          (c: any): c is ObjetoConTipo =>
+            "tipo" in c && typeof c.tipo === "string"
+        );
 
-      const objetoConTipo = componentes.find(
-        (obj: any): obj is ObjetoConTipo =>
-          "tipo" in obj && typeof obj.tipo === "string"
-      );
+        const transform = componentes.find(
+          (c: any): c is Transform =>
+            "x" in c &&
+            "y" in c &&
+            "z" in c &&
+            "rotacionY" in c &&
+            typeof c.x === "number"
+        );
 
-      const transform = componentes.find(
-        (obj: any): obj is Transform =>
-          "x" in obj &&
-          "y" in obj &&
-          "z" in obj &&
-          "rotacionY" in obj &&
-          typeof obj.x === "number" &&
-          typeof obj.y === "number" &&
-          typeof obj.z === "number" &&
-          typeof obj.rotacionY === "number"
-      );
+        const offsetY = objetoConTipo
+          ? getDispositivoHeight(objetoConTipo.tipo)
+          : 0;
+        const position: [number, number, number] = transform
+          ? [transform.x, transform.y + offsetY, transform.z]
+          : [0, offsetY, 0];
 
-      if (!objetoConTipo) return;
+        const rotacionY = transform ? (transform.rotacionY * Math.PI) / 180 : 0;
 
-      // el offsetY es para poner el dispositivo a
-      // la altura correcta sobre una mesa
-      const offsetY = getDispositivoHeight(objetoConTipo.tipo);
-
-      const position: [number, number, number] = transform
-        ? [transform.x, transform.y + offsetY, transform.z]
-        : [0, offsetY, 0];
-
-      const rotacionY: number = transform?.rotacionY ?? 0;
-
-      processedEntities.push({
-        objetoConTipo,
-        position,
-        rotacionY,
-        entityIndex,
-      });
-    });
-
-    return processedEntities;
+        return {
+          entidadId,
+          objetoConTipo: objetoConTipo ?? { tipo: "desconocido" },
+          position,
+          rotacionY,
+          entidadCompleta: entidadObjeto,
+        };
+      }
+    );
   };
 
   return {
@@ -154,6 +149,7 @@ export function useECSScene() {
       setIsPaused(false);
     },
     isPaused,
+    presupuesto,
     toggleConfigWorkstation: (
       entidadWorkstation: Entidad,
       nombreConfig: string
