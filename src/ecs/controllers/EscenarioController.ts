@@ -1,6 +1,6 @@
-import { TiempoComponent } from "../components";
+import { PresupuestoComponent, TiempoComponent } from "../components";
 import { ECSManager, type Entidad } from "../core";
-import { SistemaTiempo } from "../systems";
+import { SistemaPresupuesto, SistemaTiempo } from "../systems";
 import { ScenarioBuilder } from "../utils/ScenarioBuilder";
 
 export class EscenarioController {
@@ -52,5 +52,18 @@ export class EscenarioController {
         }
 
         return {iniciarTiempo, pausarTiempo, reanudarTiempo, estaTiempoPausado};
+    }
+
+    public efectuarPresupuesto(montoInicial: number) : any{
+        const entidadPresupuesto = this.escManager.agregarEntidad();
+        this.escManager.agregarComponente(entidadPresupuesto, new PresupuestoComponent(montoInicial));
+        const sistemaPresupuesto = new SistemaPresupuesto();
+        this.escManager.agregarSistema(sistemaPresupuesto);
+        
+        const toggleConfiguracionWorkstation = (entidadWorkstation: Entidad, nombreConfig: string) =>{
+            sistemaPresupuesto.toggleConfiguracionWorkstation(entidadPresupuesto, entidadWorkstation, nombreConfig);
+        }
+
+        return { toggleConfiguracionWorkstation }
     }
 }

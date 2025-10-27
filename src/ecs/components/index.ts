@@ -8,5 +8,4 @@ export * from "./ZonaComponent";
 export * from "./EscenarioComponent";
 export * from "./TiempoComponent";
 export * from "./PresupuestoComponent";
-export * from "./ConfiguracionWorkstationComponent"
 export * from "./WorkstationComponent"

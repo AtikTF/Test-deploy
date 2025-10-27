@@ -18,22 +18,22 @@ describe('PresupuestoComponent y SistemaPresupuesto', () => {
         const presupuesto = c!.get(PresupuestoComponent);
         expect(presupuesto.monto).toBe(presupuestoInicial);
 
-        const configuración = ConfiguracionWorkstation.ANTIVIRUS_GESTIONADO
+        const configuracion = ConfiguracionWorkstation.values().next().value.nombreConfig;
 
         // Simular activación de una configuración
         const entidadWorkstation = em.agregarEntidad();
-        em.agregarComponente(entidadWorkstation, new WorkstationComponent());
-        sistema.toggleConfiguracionWorkstation(entidadPresupuesto, entidadWorkstation, configuración)
+        em.agregarComponente(entidadWorkstation, new WorkstationComponent(ConfiguracionWorkstation));
+        sistema.toggleConfiguracionWorkstation(entidadPresupuesto, entidadWorkstation, configuracion)
         expect(presupuesto.monto).toBeLessThan(presupuestoInicial);
-        console.log("Se activó la configuración:", configuración)
+        console.log("Se activó la configuración:", configuracion)
         console.log("Presupuesto actual:", presupuesto.monto)
 
         const montoDespuesDeActivacion = presupuesto.monto
 
         // Simular desactivación de una configuración
-        sistema.toggleConfiguracionWorkstation(entidadPresupuesto, entidadWorkstation, configuración)
+        sistema.toggleConfiguracionWorkstation(entidadPresupuesto, entidadWorkstation, configuracion)
         expect(presupuesto.monto).toBeLessThan(montoDespuesDeActivacion);
-        console.log("Se desactivó la configuración: ", configuración)
+        console.log("Se desactivó la configuración:", configuracion)
         console.log("Presupuesto actual:", presupuesto.monto)
     });
 });

@@ -51,7 +51,8 @@ export class ScenarioBuilder {
       new EscenarioComponent(
         escenario.id,
         escenario.titulo,
-        escenario.descripcion
+        escenario.descripcion,
+        escenario.presupuestoInicial
       )
     );
     return entidadEscenario;

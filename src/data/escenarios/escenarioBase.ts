@@ -5,6 +5,7 @@ export const escenarioBase: any = {
   titulo: "Infraestructura Corporativa Completa",
   descripcion:
     "Un escenario empresarial con múltiples zonas, oficinas y dispositivos diversos",
+  presupuestoInicial: 1000,
   zonas: [
     {
       id: 1,

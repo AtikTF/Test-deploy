@@ -1,16 +1,22 @@
-export enum ConfiguracionWorkstation {
-  ACTUALIZACIONES_AUTOMATICAS_ANTIVIRUS = "Actualizaciones automáticas de antivirus",
-  ANTIVIRUS_GESTIONADO = "Antivirus gestionado",
-  USUARIO_APLICA_PARCHES = "Usuario aplica parches",
-  ACTUALIZACION_AUTOMATICA_PARCHES = "Actualización automática de parches",
-  ACTUALIZAR_PARCHES_AL_PUBLICARSE = "Actualizar parches al publicarse",
-  ACTUALIZACION_REGULAR_PARCHES = "Actualización regular de parches",
-  APLICAR_POLITICA_CONTRASEÑAS = "Aplicar política de contraseñas",
-  USAR_CONTRASEÑA_UNICA = "Usar contraseña única",
-  BLOQUEO_AUTOMATICO_INACTIVIDAD = "Bloqueo automático por inactividad",
-  BLOQUEAR_O_CERRAR_SESION_INACTIVIDAD = "Bloquear o cerrar sesión por inactividad",
-  BLOQUEAR_MEDIOS_EXTRAIBLES = "Bloquear medios extraíbles",
-  BLOQUEAR_ALMACENAMIENTO_LOCAL = "Bloquear almacenamiento local",
-  CUIDADO_ADJUNTOS_EMAIL = "Cuidado con adjuntos de email",
-  SIN_SOFTWARE_EXTERNO = "Sin software externo",
+interface EsquemaConfigWorkstation {
+    nombreConfig: string,
+    costoActivacion: number,
+    activado: boolean
 }
+
+export const ConfiguracionWorkstation: Array<EsquemaConfigWorkstation> = [
+    { "nombreConfig": "Actualizaciones automáticas de antivirus", "costoActivacion": 40, "activado": false},
+    { "nombreConfig": "Antivirus gestionado", "costoActivacion": 40, "activado": false},
+    { "nombreConfig": "Usuario aplica parches", "costoActivacion": 35, "activado": false},
+    { "nombreConfig": "Actualización automática de parches", "costoActivacion": 20, "activado": false},
+    { "nombreConfig": "Actualizar parches al publicarse", "costoActivacion": 35, "activado": false},
+    { "nombreConfig": "Actualización regular de parches", "costoActivacion": 30, "activado": false},
+    { "nombreConfig": "Aplicar política de contraseñas", "costoActivacion": 35, "activado": true},
+    { "nombreConfig": "Usar contraseña única", "costoActivacion": 20, "activado": true},
+    { "nombreConfig": "Bloqueo automático por inactividad", "costoActivacion": 10, "activado": true},
+    { "nombreConfig": "Bloquear o cerrar sesión por inactividad", "costoActivacion": 10, "activado": true},
+    { "nombreConfig": "Bloquear medios extraíbles", "costoActivacion": 20, "activado": false},
+    { "nombreConfig": "Bloquear almacenamiento local", "costoActivacion": 25, "activado": false},
+    { "nombreConfig": "Cuidado con adjuntos de email", "costoActivacion": 30, "activado": false},
+    { "nombreConfig": "Sin software externo", "costoActivacion": 25, "activado": true}
+]

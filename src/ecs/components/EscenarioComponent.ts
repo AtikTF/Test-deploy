@@ -6,6 +6,7 @@ export class EscenarioComponent extends Componente implements Escenario {
     public readonly id: number,
     public titulo: string,
     public descripcion: string,
+    public presupuestoInicial: number,
     public zonas: Entidad[] = [],
     public tipo: string = "escenario"
   ) {

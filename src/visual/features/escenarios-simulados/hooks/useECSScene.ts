@@ -39,6 +39,7 @@ export function useECSScene() {
 
   const escenarioController = new EscenarioController(escenario);
   const { iniciarTiempo, pausarTiempo, reanudarTiempo, estaTiempoPausado } = escenarioController.ejecutarTiempo();
+  const { toggleConfiguracionWorkstation } = escenarioController.efectuarPresupuesto(escenario.presupuestoInicial);
 
   useEffect(() => {
 
@@ -101,9 +102,7 @@ export function useECSScene() {
     ecsManager: escenarioController.escManager,
     builder: escenarioController.builder,
     processEntities,
-    iniciar: () => {
-      iniciarTiempo();
-    },
+    iniciar: () => { iniciarTiempo(); },
     pause: () => {
       console.log("useECSScene: pausar");
       pausarTiempo();
@@ -112,8 +111,9 @@ export function useECSScene() {
       console.log("useECSScene: reanudar");
       reanudarTiempo();
     },
-    isPaused: () => {
-      estaTiempoPausado();
+    isPaused: () => { estaTiempoPausado(); },
+    toggleConfigWorkstation: (entidadWorkstation: Entidad, nombreConfig: string) => {
+      toggleConfiguracionWorkstation(entidadWorkstation, nombreConfig);
     },
   };
 }
