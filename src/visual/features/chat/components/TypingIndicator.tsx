@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '../../styles/TypingIndicator.module.css';
+import styles from '../styles/TypingIndicator.module.css';
 
 const TypingIndicator: React.FC = () => {
   return (

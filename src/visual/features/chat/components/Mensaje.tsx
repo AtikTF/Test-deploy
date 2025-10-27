@@ -1,12 +1,12 @@
 import React from 'react';
-import type { Message } from '../../types/chat.types';
-import styles from '../../styles/MessageBubble.module.css';
+import styles from '../styles/MessageBubble.module.css';
+import type { Message } from '../../../../chat';
 
 interface MessageBubbleProps {
   message: Message;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+const Mensaje: React.FC<MessageBubbleProps> = ({ message }) => {
   const formatTime = (date: Date) => {
     return new Date(date).toLocaleTimeString('es-ES', {
       hour: '2-digit',
@@ -17,12 +17,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   return (
     <div className={`${styles.messageBubble} ${styles[message.sender]}`}>
       <div className={styles.messageContent}>
-        {/* Mostrar contexto si existe */}
         {message.context && (
           <div className={styles.messageContext}>
             {message.context.imageUrl && (
-              <img 
-                src={message.context.imageUrl} 
+              <img
+                src={message.context.imageUrl}
                 alt={message.context.displayText || message.context.contextId}
                 className={styles.messageContextImage}
               />
@@ -39,4 +38,4 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   );
 };
 
-export default MessageBubble;
+export default Mensaje;

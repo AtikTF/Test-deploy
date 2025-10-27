@@ -1,31 +1,55 @@
 .messageInputContainer {
-  display: flex;
-  gap: 8px;
+  gap: 10px;
   padding: 12px;
-  background-color: var(--surface-primary);
-  border-top: 1px solid var(--border-primary);
-  align-items: flex-end;
+  margin: 12px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-primary);
+  background-color: var(--surface-secondary);
   flex-shrink: 0;
 }
 
 .messageInput {
   flex: 1;
-  padding: 10px 14px;
-  border: 1px solid var(--border-primary);
-  border-radius: var(--border-radius);
+  border: none;
+  width: 100%;
   font-size: 0.95rem;
   font-family: inherit;
   resize: none;
-  max-height: 120px;
+  height: 30px;
   overflow-y: auto;
-  transition: border-color 0.2s;
-  background-color: var(--surface-secondary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: transparent;
   color: var(--text-primary);
 }
-
+.contextButton {
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: transparent;
+  border: 1px solid var(--border-primary);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+.contextActive {
+  background-color: var(--blue-transparent);
+  color: var(--blue);
+  border: 1px solid transparent;
+}
+.contextButton:hover {
+  filter: brightness(1.2);
+}
+.inputActions {
+  display: flex;
+  padding-top: 8px;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+}
 .messageInput:focus {
   outline: none;
-  border-color: var(--blue);
 }
 
 .messageInput:disabled {
@@ -38,39 +62,29 @@
 }
 
 .sendButton {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  padding-left: 4px;
   border: none;
   border-radius: 50%;
-  background-color: var(--blue);
+  background: var(--blue);
   color: var(--text-primary);
+  border: 1px solid var(--blue-lighter) !important;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  padding: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .sendButton:hover:not(:disabled) {
-  background-color: #3366e6;
-  transform: scale(1.05);
+  background: var(--blue);
+  color: var(--text-primary);
+  border: 1px solid var(--blue-lighter) !important;
 }
-
-.sendButton:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
 .sendButton:disabled {
-  background-color: var(--border-primary);
   cursor: not-allowed;
   opacity: 0.5;
-}
-
-.sendButton svg {
-  width: 20px;
-  height: 20px;
 }
 
 /* Responsive */
@@ -79,17 +93,17 @@
     padding: 10px;
     gap: 6px;
   }
-  
+
   .messageInput {
     font-size: 0.9rem;
     padding: 8px 12px;
   }
-  
+
   .sendButton {
     width: 36px;
     height: 36px;
   }
-  
+
   .sendButton svg {
     width: 18px;
     height: 18px;

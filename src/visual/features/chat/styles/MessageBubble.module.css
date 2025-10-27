@@ -1,7 +1,7 @@
 .messageBubble {
   display: flex;
-  margin: 4px 0;
-  animation: slideIn 0.3s ease-out;
+  margin: 6px 0;
+  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .messageBubble.user {
@@ -14,22 +14,24 @@
 
 .messageContent {
   max-width: 80%;
-  padding: 10px 14px;
-  border-radius: var(--border-radius);
+  padding: 12px;
+  border-radius: 12px;
   word-wrap: break-word;
   position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .messageBubble.user .messageContent {
-  background-color: var(--blue);
+  background: var(--blue-transparent);
   color: var(--text-primary);
-  border: 1px solid var(--blue);
+}
+.messageBubble.user .messageContent .messageTime {
+  color: var(--blue-lighter);
 }
 
 .messageBubble.bot .messageContent {
-  background-color: var(--surface-primary);
+  background: var(--surface-secondary) 100%;
   color: var(--text-primary);
-  border: 1px solid var(--border-primary);
 }
 
 .messageContent p {
@@ -92,11 +94,11 @@
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(15px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -106,11 +108,11 @@
     max-width: 85%;
     padding: 8px 12px;
   }
-  
+
   .messageContent p {
     font-size: 0.9rem;
   }
-  
+
   .messageContextImage {
     width: 32px;
     height: 32px;

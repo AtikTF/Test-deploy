@@ -4,8 +4,8 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background-color: var(--surface-secondary);
+  gap: 10px;
+  position: relative;
 }
 
 .emptyState {
@@ -28,7 +28,7 @@
     padding: 12px;
     gap: 6px;
   }
-  
+
   .emptyState {
     font-size: 0.9rem;
   }

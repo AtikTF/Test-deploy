@@ -3,16 +3,14 @@ import styles from '../styles/Header.module.css';
 import NavigationLink from './Navigation';
 import DevicesIcon from '../icons/DevicesIcon';
 import OfficeIcon from '../icons/OfficeIcon';
-import ChatToggleButton from '../../features/chat/components/ChatToggleButton/ChatToggleButton';
-import { useChatContext } from '../../features/chat/context/ChatContext';
 import { useEscenarioActual } from '../contexts/EscenarioContext';
-import {useECSScene} from "../../features/escenarios-simulados/hooks/useECSScene";
+import { useECSScene } from "../../features/escenarios-simulados/hooks/useECSScene";
 import { useEffect } from 'react';
+import ChatLauncher from '../../features/chat/components/ChatLauncher';
 
 const Header: React.FC = () => {
     const escenario = useEscenarioActual();
-    const {pause, resume, iniciar, isPaused} = useECSScene();
-    const { isChatOpen, isContextModeActive, toggleChat } = useChatContext();
+    const { pause, resume, iniciar, isPaused } = useECSScene();
     useEffect(() => {
         // iniciar la simulación una sola vez al montar
         iniciar && iniciar();
@@ -25,13 +23,9 @@ const Header: React.FC = () => {
                     <span aria-label='Estado de la animación'>
                         {isPaused && isPaused() ? 'Pausado' : 'En ejecución'}
                     </span>
-                    <button onClick={()=>{pause && pause()}}>Pausar</button>
-                    <button onClick={()=>{resume && resume()}}>Reanudar</button>
-                    <ChatToggleButton 
-                        isOpen={isChatOpen}
-                        isContextModeActive={isContextModeActive}
-                        onToggle={toggleChat}
-                    />
+                    <button onClick={() => { pause && pause() }}>Pausar</button>
+                    <button onClick={() => { resume && resume() }}>Reanudar</button>
+                    <ChatLauncher />
                 </div>
             </div>
             <nav className={styles.nav}>

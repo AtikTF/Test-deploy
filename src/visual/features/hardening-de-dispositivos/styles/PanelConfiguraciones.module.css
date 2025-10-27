@@ -24,3 +24,6 @@
 .listaConfiguraciones > *:first-child {
   padding-top: 0;
 }
+.listaConfiguraciones > * {
+  box-sizing: border-box;
+}

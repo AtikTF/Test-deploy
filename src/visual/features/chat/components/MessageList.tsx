@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import type { Message } from '../../types/chat.types';
-import MessageBubble from '../MessageBubble/MessageBubble';
-import TypingIndicator from '../TypingIndicator/TypingIndicator';
-import styles from '../../styles/MessageList.module.css';
+import type { Message } from '../../../../chat';
+import TypingIndicator from './TypingIndicator';
+import styles from '../styles/MessageList.module.css';
+import Mensaje from './Mensaje';
 
 interface MessageListProps {
-  messages: Message[];
+  messages: readonly Message[];
   isTyping: boolean;
 }
 
@@ -24,11 +24,11 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) => {
     <div className={styles.messageList}>
       {messages.length === 0 ? (
         <div className={styles.emptyState}>
-          <p>👋 ¡Hola! Envía un mensaje para comenzar</p>
+          <p>¡Hola! Envía un mensaje para comenzar.</p>
         </div>
       ) : (
         messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
+          <Mensaje key={message.id} message={message} />
         ))
       )}
       {isTyping && <TypingIndicator />}
