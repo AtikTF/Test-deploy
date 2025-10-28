@@ -1,15 +1,34 @@
-import { Componente, Sistema, type Entidad } from "../core";
-
-export class ComponenteParaTest extends Componente{
-    constructor(public x: number){ super();}
-}
+import { EstadoAtaqueDispositivo } from "../../types/DeviceEnums";
+import { AtaqueComponent, DispositivoComponent, TiempoComponent } from "../components";
+import { Sistema, type Entidad } from "../core";
 
 export class SistemaAtaque extends Sistema {
-    // Valores e implentaciones arbitrarios. TOCA CAMBIAR
-    public componentesRequeridos: Set<Function> = new Set([ComponenteParaTest]);
-    public entidadesProcesadas: Entidad[] = []; // Solo para tests
+    public componentesRequeridos: Set<Function> = new Set([AtaqueComponent]);
 
     public actualizar(entidades: Set<Entidad>): void {
-        this.entidadesProcesadas = Array.from(entidades);
+        //
+    }
+
+    public ejecutarAtaque(entidadDispositivo: Entidad, ataque: AtaqueComponent, entidadTiempo: Entidad): void {
+        /*const container1 = this.ecsManager.getComponentes(entidadAtaque);
+        if (!container1) return;
+        const ataque = container1.get(AtaqueComponent);*/
+        console.log("Ejecutando ataque para entidad dispositivo:", entidadDispositivo);
+        const container2 = this.ecsManager.getComponentes(entidadTiempo);
+        if (!container2) return;
+        const tiempo = container2.get(TiempoComponent);
+
+        const container3 = this.ecsManager.getComponentes(entidadDispositivo);
+        if(!container3) return;
+        const dispositivoAAtacar = container3.get(DispositivoComponent);
+
+        if(tiempo.transcurrido == ataque.tiempoEnOcurrir){
+            dispositivoAAtacar.estadoAtaque = EstadoAtaqueDispositivo.COMPROMETIDO;
+            console.log("cambio hecho en estado de dispositivo");
+            console.log("entidad:", entidadDispositivo);
+            console.log(dispositivoAAtacar.estadoAtaque);
+            console.log(this.ecsManager.getEntidades());
+            this.ecsManager.emit("eventoAtaque", ataque);
+        }
     }
 }

@@ -14,3 +14,12 @@ export enum TipoDispositivo {
   NAS = "nas",
   OTRO = "otro",
 }
+
+export enum EstadoAtaqueDispositivo {
+    NORMAL = "normal",
+    COMPROMETIDO = "comprometido", // Que está bajo un ataque
+}
+
+export enum TipoAtaque {
+    INFECCION_TROYANO = "Infección de troyano",
+}

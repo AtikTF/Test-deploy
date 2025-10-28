@@ -1,5 +1,6 @@
+import type { AtaqueComponent } from "../ecs/components";
 import type { Entidad } from "../ecs/core";
-import { Mueble, TipoDispositivo } from "./DeviceEnums";
+import { EstadoAtaqueDispositivo, Mueble, TipoDispositivo } from "./DeviceEnums";
 
 export interface Escenario {
   id: number;
@@ -7,6 +8,7 @@ export interface Escenario {
   descripcion: string;
   presupuestoInicial: number,
   zonas: Entidad[];
+  ataques: AtaqueComponent[];
 }
 
 export interface Zona {
@@ -22,6 +24,7 @@ export interface Dispositivo {
   hardware: string;
   software?: string;
   posicion?: { x: number; y: number; z: number };
+  estadoAtaque?: EstadoAtaqueDispositivo;
 }
 
 export interface Espacio {

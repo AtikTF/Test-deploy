@@ -18,7 +18,7 @@ describe('PresupuestoComponent y SistemaPresupuesto', () => {
         const presupuesto = c!.get(PresupuestoComponent);
         expect(presupuesto.monto).toBe(presupuestoInicial);
 
-        const configuracion = ConfiguracionWorkstation.values().next().value.nombreConfig;
+        const configuracion = ConfiguracionWorkstation.values().next().value!.nombreConfig;
 
         // Simular activación de una configuración
         const entidadWorkstation = em.agregarEntidad();

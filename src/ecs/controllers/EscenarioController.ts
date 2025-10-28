@@ -1,6 +1,6 @@
-import { PresupuestoComponent, TiempoComponent } from "../components";
-import { ECSManager, type Entidad } from "../core";
-import { SistemaPresupuesto, SistemaTiempo } from "../systems";
+import { AtaqueComponent, DispositivoComponent, PresupuestoComponent, TiempoComponent } from "../components";
+import { ComponenteContainer, ECSManager, type Entidad } from "../core";
+import { SistemaAtaque, SistemaPresupuesto, SistemaTiempo } from "../systems";
 import { ScenarioBuilder } from "../utils/ScenarioBuilder";
 
 export class EscenarioController {
@@ -12,6 +12,7 @@ export class EscenarioController {
   private sistemaTiempo?: SistemaTiempo;
   private sistemaPresupuesto?: SistemaPresupuesto;
   private entidadPresupuesto?: Entidad;
+  private sistemaAtaque?: SistemaAtaque;
 
   private static instance: EscenarioController | null = null;
 
@@ -118,6 +119,41 @@ export class EscenarioController {
 
     return { toggleConfiguracionWorkstation };
   }
+
+  public ejecutarAtaques(ataques: AtaqueComponent[]) {
+    //console.log("EscenarioController: entrado ejecutarAtaques");
+    ataques.forEach((ataque) => {
+      const entidadAtaque = this.escManager.agregarEntidad();
+      this.escManager.agregarComponente(entidadAtaque, ataque);
+    });
+    
+    this.sistemaAtaque = new SistemaAtaque();
+    this.escManager.agregarSistema(this.sistemaAtaque);
+    
+    let dispositivos: any[][] = []; // Info de dispositivo: idEntidad y nombre
+
+    this.builder.getEntidades().forEach((container, entidad) => {
+      if(container.tiene(DispositivoComponent))
+        dispositivos.push([entidad, container.get(DispositivoComponent).nombre]); 
+    });
+
+    const nombresDispositivosDeAtaques: string[] = [];
+    ataques.forEach((ataque) => {
+      nombresDispositivosDeAtaques.push(ataque.dispositivoAAtacar);
+    });
+
+    const entidadesDispConSusAtaques = dispositivos.filter(([entidad, nombre]) => nombresDispositivosDeAtaques.includes(nombre));
+
+    //console.log("EscenarioController:", entidadesDispConSusAtaques);
+    //console.log(this.builder)
+
+    for(let i = 0; i < ataques.length; i++){
+      this.sistemaAtaque.ejecutarAtaque(entidadesDispConSusAtaques[i][0], ataques[i], this.entidadTiempo!);
+    }
+    console.log(this.builder);
+    //console.log("EscenarioController: terminado ejecutarAtaques");
+  }
+
 
   public getPresupuestoActual(): number {
     if (!this.escManager || !this.entidadPresupuesto) {

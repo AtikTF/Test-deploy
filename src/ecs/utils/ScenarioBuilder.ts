@@ -6,6 +6,7 @@ import {
   OficinaComponent,
   ZonaComponent,
   EscenarioComponent,
+  AtaqueComponent,
   WorkstationComponent,
 } from "../components";
 import type { ComponenteContainer, Entidad } from "../core/Componente";
@@ -29,6 +30,11 @@ export class ScenarioBuilder {
    */
   construirDesdeArchivo(escenario: Escenario): this {
     const escenarioPadre = this.crearEscenario(escenario);
+    
+    escenario.ataques.forEach((ataque: any) => {
+      this.crearAtaque(ataque);
+    });
+
     escenario.zonas.forEach((zona: any) => {
       const zonaEntidad = this.crearZona(zona, escenarioPadre);
       zona.oficinas.forEach((oficina: any) => {
@@ -57,6 +63,19 @@ export class ScenarioBuilder {
       )
     );
     return entidadEscenario;
+  }
+
+  crearAtaque(ataque: any) {
+    const entidadAtaque = this.ecsManager.agregarEntidad();
+    this.ecsManager.agregarComponente(
+      entidadAtaque,
+      new AtaqueComponent(
+        ataque.nombreAtaque,
+        ataque.tiempoEnOcurrir,
+        ataque.tipoAtaque,
+        ataque.dispositivoAAtacar
+      )
+    );
   }
 
   crearZona(zona: any, escenarioEntidad?: Entidad): Entidad {
@@ -134,7 +153,8 @@ export class ScenarioBuilder {
         dispositivo.nombre,
         dispositivo.sistemaOperativo,
         dispositivo.hardware,
-        dispositivo.tipo
+        dispositivo.tipo,
+        dispositivo.estadoAtaque
       )
     );
     this.ecsManager.agregarComponente(
