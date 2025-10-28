@@ -179,7 +179,6 @@ export class EscenarioController {
       ([entidad, nombre]) => nombreDispositivoAAtacar == nombre
     );
 
-    // CAMBIAR LUEGO: POR EL STRICT MODE SE MULTIPLICAN LAS ENTRADAS
     this.sistemaAtaque?.ejecutarAtaque(entidadDispConSuNombre[0][0], ataque);
   }
 
@@ -200,7 +199,6 @@ export class EscenarioController {
     for (const [, container] of this.builder.getEntidades()) {
       if (container.tiene(AtaqueComponent)) {
         ataques.push(container.get(AtaqueComponent));
-        break; // CAMBIAR ESTO, EL STRICT MODE NO PERMITE TESTEAR CORRECTAMENTE
       }
     }
 

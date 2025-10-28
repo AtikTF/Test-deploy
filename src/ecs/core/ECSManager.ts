@@ -160,13 +160,8 @@ export class ECSManager {
 
   public consultarAccion(accion: string, objeto: string, tiempo: number, val?: any)
                         : [string, string, number, any?] | undefined {
-    console.log(this.accionesSimulacion.at(0));
-    console.log(accion, objeto, tiempo, val);
-                          return this.accionesSimulacion.find(([a, o, t, v]) =>
-      a == accion &&
-      o == objeto &&
-      t == tiempo &&
-      (val == undefined || v == val)
+    return this.accionesSimulacion.find(([a, o, t, v]) =>
+      JSON.stringify([a, o, t, v]) === JSON.stringify([accion, objeto, tiempo, val])
     );
   }
 

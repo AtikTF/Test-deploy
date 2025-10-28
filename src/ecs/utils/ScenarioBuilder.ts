@@ -37,7 +37,7 @@ export class ScenarioBuilder {
     });
 
     escenario.fases.forEach((fase: any) => {
-      this.crearAtaque(fase);
+      this.crearFase(fase);
     });
 
     escenario.zonas.forEach((zona: any) => {
