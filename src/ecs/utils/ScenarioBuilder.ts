@@ -9,10 +9,13 @@ import {
   AtaqueComponent,
   FaseComponent,
   WorkstationComponent,
+  RouterComponent,
+  ActivoComponent,
 } from "../components";
 import type { ComponenteContainer, Entidad } from "../core/Componente";
 import type { Escenario } from "../../types/EscenarioTypes";
 import { SistemaRelaciones } from "../systems/SistemaRelaciones";
+import { TipoDispositivo } from "../../types/DeviceEnums";
 /**
  * Builder para crear escenarios de forma declarativa y simple
  * Facilita la construcción inicial y modificaciones posteriores
@@ -46,7 +49,8 @@ export class ScenarioBuilder {
         oficina.espacios.forEach((espacio: any) => {
           const espacioEntidad = this.crearEspacio(espacio, oficinaEntidad);
           espacio.dispositivos.forEach((dispositivo: any) => {
-            this.crearDispositivo(dispositivo, espacioEntidad);
+            const dispositivoEntidad = this.crearDispositivo(dispositivo, espacioEntidad);
+            this.crearActivo(dispositivoEntidad, dispositivo.activos);
           });
         });
       });
@@ -174,7 +178,8 @@ export class ScenarioBuilder {
         dispositivo.sistemaOperativo,
         dispositivo.hardware,
         dispositivo.tipo,
-        dispositivo.estadoAtaque
+        dispositivo.estadoAtaque,
+        dispositivo.redes
       )
     );
     this.ecsManager.agregarComponente(
@@ -186,11 +191,23 @@ export class ScenarioBuilder {
         dispositivo.posicion.rotacionY
       )
     );
-    // TO-DO: agregar condicional para cada tipo de dispositivo segun dispositivo.tipo (IMPORTANTE)
-    this.ecsManager.agregarComponente(
-      entidadDispositivo,
-      new WorkstationComponent()
-    );
+
+    switch(dispositivo.tipo){
+        case TipoDispositivo.WORKSTATION: {
+            this.ecsManager.agregarComponente(
+                entidadDispositivo,
+                new WorkstationComponent()
+            );
+            break;
+        }
+        case TipoDispositivo.ROUTER: {
+            this.ecsManager.agregarComponente(
+                entidadDispositivo,
+                new RouterComponent(false)
+            );
+            break;
+        }
+    }
 
     const disEntidad = entidadDispositivo;
     if (disEntidad != null) {
@@ -203,6 +220,15 @@ export class ScenarioBuilder {
       relacion.agregar(espacioId, disEntidad);
     }
     return entidadDispositivo;
+  }
+
+  crearActivo(entidadDispositivo: number, activos: any) {
+    const activoComponente = new ActivoComponent();
+    activoComponente.activos = activos;
+    this.ecsManager.agregarComponente(
+      entidadDispositivo,
+      activoComponente
+    );
   }
 
   public getEntidades(): Map<Entidad, ComponenteContainer> {

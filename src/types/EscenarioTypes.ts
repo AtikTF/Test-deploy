@@ -34,6 +34,12 @@ export interface Dispositivo {
   entidadId?: number;
   // Configuraciones del Workstation si aplica (las provee WorkstationComponent)
   configuraciones?: any;
+  redes: string[];
+}
+
+export interface Activo {
+    nombre: string,
+    contenido: string
 }
 
 export interface Espacio {

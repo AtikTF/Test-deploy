@@ -11,3 +11,6 @@ export * from "./PresupuestoComponent";
 export * from "./WorkstationComponent"
 export * from "./AtaqueComponent"
 export * from "./FaseComponent"
+export * from "./ActivoComponent"
+export * from "./InternetComponent"
+export * from "./RouterComponent"
