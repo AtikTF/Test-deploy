@@ -24,7 +24,7 @@ const Model3D: React.FC<Model3DProps> = ({
     scale = 1,
     showHoverButton = true,
     onClick,
-    hoverPadding = 1.5
+    hoverPadding = 1
 }) => {
     const groupRef = useRef<Group>(null);
     const { scene } = useGLTF(modelPath);

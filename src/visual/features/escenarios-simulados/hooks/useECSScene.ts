@@ -1,21 +1,15 @@
-import { useState, useEffect, useRef } from "react";
-import { ECSManager } from "../../../../ecs/core/ECSManager";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import type { Entidad } from "../../../../ecs/core/Componente";
-
 import { getDispositivoHeight } from "../config/modelConfig";
-import { ScenarioBuilder } from "../../../../ecs/utils/ScenarioBuilder";
 import { useEscenarioActual } from "../../../common/contexts/EscenarioContext";
-import { SistemaTiempo } from "../../../../ecs/systems";
-import { TiempoComponent } from "../../../../ecs/components";
+import { EscenarioController } from "../../../../ecs/controllers/EscenarioController";
 
 export interface ECSSceneEntity {
-  id: Entidad;
+  entidadId: Entidad;
+  objetoConTipo: { tipo: string; [key: string]: any };
   position: [number, number, number];
-  rotation: number;
-  type: "espacio" | "dispositivo";
-  muebleTipo?: string;
-  dispositivoTipo?: string;
-  nombre?: string;
+  rotacionY: number;
+  entidadCompleta: any;
 }
 
 interface Transform {
@@ -30,135 +24,203 @@ interface ObjetoConTipo {
   [key: string]: any;
 }
 
-interface ProcessedEntity {
-  objetoConTipo: ObjetoConTipo;
-  position: [number, number, number];
-  rotacionY: number;
-  entityIndex: number;
-}
-
 export function useECSScene() {
   const escenario = useEscenarioActual();
-  const [entities, setEntities] = useState<any>([]);
-  const ecsManagerRef = useRef<ECSManager | null>(null);
-  const builderRef = useRef<ScenarioBuilder | null>(null);
-  const inicializadoRef = useRef(false);
+  const [entities, setEntities] = useState<Map<Entidad, any>>(new Map());
+  const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0);
+  const [mostrarNuevoLog, setMostrarNuevoLog] = useState(false);
+  const [mensajeLog, setMensajeLog] = useState("");
+  const [isPaused, setIsPaused] = useState(false);
+  const [presupuesto, setPresupuesto] = useState(0);
 
-  // Usar un singleton a nivel de módulo para que múltiples hooks/componentes compartan el mismo ECS
-  // (Header y la escena deben controlar la misma simulación)
-  // Inicializamos perezosamente si no existe
-  if (!(globalThis as any).__simECS) {
-    const ecs = new ECSManager();
-    const timeEntity = ecs.agregarEntidad();
-    ecs.agregarComponente(timeEntity, new TiempoComponent());
-    const sistemaTiempo = new SistemaTiempo();
-    ecs.agregarSistema(sistemaTiempo);
+  // useRef para evitar múltiples inicializaciones
+  const inicializado = useRef(false);
+  const tiempoIniciadoRef = useRef(false);
 
-    // Almacenar en globalThis para accesibilidad entre componentes/hook invocaciones
-    (globalThis as any).__simECS = {
-      ecsManager: ecs,
-      timeEntity,
-      sistemaTiempo,
-      builder: null as ScenarioBuilder | null,
-    };
-  }
+  const escenarioController = useMemo(
+    () => EscenarioController.getInstance(escenario),
+    [escenario]
+  );
 
-  // Referencias al singleton
-  ecsManagerRef.current = (globalThis as any).__simECS.ecsManager as ECSManager;
-  const timeEntity = (globalThis as any).__simECS.timeEntity as Entidad;
-  const sistemaTiempo = (globalThis as any).__simECS
-    .sistemaTiempo as SistemaTiempo;
-  builderRef.current = (globalThis as any).__simECS
-    .builder as ScenarioBuilder | null;
+  // NO llamar ejecutarTiempo() ni efectuarPresupuesto() aquí
+  // Se llamarán después de iniciarEscenario()
 
   useEffect(() => {
-    if (inicializadoRef.current) {
+    // Evitar múltiples inicializaciones
+    if (inicializado.current) {
+      console.log("Hook ya inicializado, omitiendo");
       return;
     }
-    inicializadoRef.current = true;
 
-    const ecsManager = ecsManagerRef.current!;
-    const builder = new ScenarioBuilder(ecsManager);
-    builder.construirDesdeArchivo(escenario);
-    builderRef.current = builder;
-    // Guardar builder en singleton para posibles futuras referencias
-    (globalThis as any).__simECS.builder = builder;
+    inicializado.current = true;
 
-    setEntities(builder.getEntidades());
-  }, [escenario]);
+    // PRIMERO: Inicializar el escenario
+    escenarioController.iniciarEscenario();
+    // SEGUNDO: Configurar tiempo
+    escenarioController.ejecutarTiempo();
+    // TERCERO: Cargar ataques DIRECTAMENTE en el sistema de tiempo
+    escenarioController.cargarAtaquesEnSistema();
+    // CUARTO: Configurar presupuesto
+    escenarioController.efectuarPresupuesto(escenario.presupuestoInicial);
+    // QUINTO: Obtener estado inicial
+    setEntities(escenarioController.builder.getEntidades());
+    setIsPaused(escenarioController.estaTiempoPausado());
+    setPresupuesto(escenarioController.getPresupuestoActual());
+    // SEXTO: Iniciar el tiempo automáticamente desde useEffect
+    escenarioController.iniciarTiempo();
+    tiempoIniciadoRef.current = true;
 
-  // procesar entidades desde los maps
-  const processEntities = (): ProcessedEntity[] => {
+    const unsubscribePresupuesto = escenarioController.on(
+      "presupuesto:actualizado",
+      (data: { presupuesto: number }) => {
+        setPresupuesto(data.presupuesto);
+      }
+    );
+
+    const unsubscribeActualizado = escenarioController.on(
+      "tiempo:actualizado",
+      (data: { transcurrido: number; pausado: boolean }) => {
+        setTiempoTranscurrido(data.transcurrido);
+      }
+    );
+
+    const unsubscribePausado = escenarioController.on(
+      "tiempo:pausado",
+      (data: { transcurrido: number; pausado: boolean }) => {
+        setTiempoTranscurrido(data.transcurrido);
+        setIsPaused(true);
+      }
+    );
+
+    const unsubscribeAtaqueRealizado = escenarioController.on(
+      "ataque:ataqueRealizado",
+      (data: { ataque: any }) => {
+        setMostrarNuevoLog(true);
+        setMensajeLog(`Ataque ejecutado: ${data.ataque.tipoAtaque}`);
+      }
+    );
+
+    const unsubscribeAtaqueMitigado = escenarioController.on(
+      "ataque:ataqueMitigado",
+      (data: { ataque: any }) => {
+        setMostrarNuevoLog(true);
+        setMensajeLog(`Ataque mitigado: ${data.ataque.tipoAtaque}`);
+      }
+    );
+
+    const unsubscribeReanudado = escenarioController.on(
+      "tiempo:reanudado",
+      (data: { transcurrido: number; pausado: boolean }) => {
+        setTiempoTranscurrido(data.transcurrido);
+        setIsPaused(false);
+      }
+    );
+
+    return () => {
+      console.log("Limpiando suscripciones");
+      unsubscribePresupuesto();
+      unsubscribeActualizado();
+      unsubscribePausado();
+      unsubscribeReanudado();
+      unsubscribeAtaqueRealizado();
+      unsubscribeAtaqueMitigado();
+    };
+  }, []); // Sin dependencias - solo se ejecuta una vez
+
+  /**
+   * Devuelve un array de entidades listo para render 3D
+   * Sin filtrar ni perder datos, mantiene referencia a la entidad original
+   */
+  const processEntities = (): ECSSceneEntity[] => {
     if (!entities) return [];
 
-    const processedEntities: ProcessedEntity[] = [];
+    return Array.from(entities.entries()).map(
+      ([entidadId, entidadObjeto]): ECSSceneEntity => {
+        const componentes = Array.from(entidadObjeto.map.values());
 
-    Array.from(entities.values()).forEach((value: any, entityIndex: number) => {
-      const componentes = Array.from(value.map.values()) as any[];
+        const objetoConTipo = componentes.find(
+          (c: any): c is ObjetoConTipo =>
+            "tipo" in c && typeof c.tipo === "string"
+        );
 
-      const objetoConTipo = componentes.find(
-        (obj: any): obj is ObjetoConTipo =>
-          "tipo" in obj && typeof obj.tipo === "string"
-      );
+        const transform = componentes.find(
+          (c: any): c is Transform =>
+            "x" in c &&
+            "y" in c &&
+            "z" in c &&
+            "rotacionY" in c &&
+            typeof c.x === "number"
+        );
 
-      const transform = componentes.find(
-        (obj: any): obj is Transform =>
-          "x" in obj &&
-          "y" in obj &&
-          "z" in obj &&
-          "rotacionY" in obj &&
-          typeof obj.x === "number" &&
-          typeof obj.y === "number" &&
-          typeof obj.z === "number" &&
-          typeof obj.rotacionY === "number"
-      );
+        const offsetY = objetoConTipo
+          ? getDispositivoHeight(objetoConTipo.tipo)
+          : 0;
+        const position: [number, number, number] = transform
+          ? [transform.x, transform.y + offsetY, transform.z]
+          : [0, offsetY, 0];
 
-      if (!objetoConTipo) return;
+        const rotacionY = transform ? (transform.rotacionY * Math.PI) / 180 : 0;
 
-      // el offsetY es para poner el dispositivo a
-      // la altura correcta sobre una mesa
-      const offsetY = getDispositivoHeight(objetoConTipo.tipo);
-
-      const position: [number, number, number] = transform
-        ? [transform.x, transform.y + offsetY, transform.z]
-        : [0, offsetY, 0];
-
-      const rotacionY: number = transform?.rotacionY ?? 0;
-
-      processedEntities.push({
-        objetoConTipo,
-        position,
-        rotacionY,
-        entityIndex,
-      });
-    });
-
-    return processedEntities;
+        return {
+          entidadId,
+          objetoConTipo: objetoConTipo ?? { tipo: "desconocido" },
+          position,
+          rotacionY,
+          entidadCompleta: entidadObjeto,
+        };
+      }
+    );
   };
+
+  // Memoizar las funciones para que no cambien en cada render
+  const iniciar = useCallback(() => {
+    if (tiempoIniciadoRef.current) {
+      console.log("Tiempo ya iniciado, omitiendo");
+      return;
+    }
+    console.log("Llamando iniciar manualmente desde useECSScene");
+    escenarioController.iniciarTiempo();
+    tiempoIniciadoRef.current = true;
+    setIsPaused(escenarioController.estaTiempoPausado());
+  }, [escenarioController]);
+
+  const pause = useCallback(() => {
+    console.log("efectuando pausa");
+    escenarioController.pausarTiempo();
+    setIsPaused(true);
+  }, [escenarioController]);
+
+  const resume = useCallback(() => {
+    console.log("efectuando reanudación");
+    escenarioController.reanudarTiempo();
+    setIsPaused(false);
+  }, [escenarioController]);
+
+  const toggleConfigWorkstation = useCallback(
+    (entidadWorkstation: Entidad, nombreConfig: string) => {
+      escenarioController.toggleConfiguracionWorkstation(
+        entidadWorkstation,
+        nombreConfig
+      );
+    },
+    [escenarioController]
+  );
 
   return {
     entities,
-    ecsManager: ecsManagerRef.current,
-    builder: builderRef.current,
+    mostrarNuevoLog,
+    mensajeLog,
+    setMostrarNuevoLog,
+    setMensajeLog,
+    ecsManager: escenarioController.ecsManager,
+    builder: escenarioController.builder,
     processEntities,
-    iniciar: () => {
-      sistemaTiempo.iniciar(timeEntity);
-    },
-    pause: () => {
-      console.log("useECSScene: pausar");
-      sistemaTiempo.pausar(timeEntity);
-    },
-    resume: () => {
-      console.log("useECSScene: reanudar");
-      sistemaTiempo.reanudar(timeEntity);
-    },
-    isPaused: () => {
-      const ecs = ecsManagerRef.current;
-      if (!ecs) return false;
-      const cont = ecs.getComponentes(timeEntity);
-      if (!cont) return false;
-      const tiempo = cont.get(TiempoComponent);
-      return !!tiempo.pausado;
-    },
+    tiempoTranscurrido,
+    iniciar,
+    pause,
+    resume,
+    isPaused,
+    presupuesto,
+    toggleConfigWorkstation,
   };
 }

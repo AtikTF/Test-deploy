@@ -39,7 +39,7 @@ function CheckableItem({
                 />
                 <div className={styles.label}>{label}</div>
             </div>
-            <span className={styles.price}>${price}</span>
+            <span className={styles.price}>{checked ? `$${(price / 2).toFixed(2)}` : `$${price.toFixed(2)}`}</span>
         </div>
     );
 }

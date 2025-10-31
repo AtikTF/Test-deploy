@@ -7,3 +7,7 @@ export * from "./OficinaComponent";
 export * from "./ZonaComponent";
 export * from "./EscenarioComponent";
 export * from "./TiempoComponent";
+export * from "./PresupuestoComponent";
+export * from "./WorkstationComponent"
+export * from "./AtaqueComponent"
+export * from "./FaseComponent"

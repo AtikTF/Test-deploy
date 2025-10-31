@@ -6,11 +6,13 @@ import {
   OficinaComponent,
   ZonaComponent,
   EscenarioComponent,
+  AtaqueComponent,
+  FaseComponent,
+  WorkstationComponent,
 } from "../components";
 import type { ComponenteContainer, Entidad } from "../core/Componente";
 import type { Escenario } from "../../types/EscenarioTypes";
 import { SistemaRelaciones } from "../systems/SistemaRelaciones";
-
 /**
  * Builder para crear escenarios de forma declarativa y simple
  * Facilita la construcción inicial y modificaciones posteriores
@@ -28,6 +30,15 @@ export class ScenarioBuilder {
    */
   construirDesdeArchivo(escenario: Escenario): this {
     const escenarioPadre = this.crearEscenario(escenario);
+    
+    escenario.ataques.forEach((ataque: any) => {
+      this.crearAtaque(ataque);
+    });
+
+    escenario.fases.forEach((fase: any) => {
+      this.crearFase(fase);
+    });
+
     escenario.zonas.forEach((zona: any) => {
       const zonaEntidad = this.crearZona(zona, escenarioPadre);
       zona.oficinas.forEach((oficina: any) => {
@@ -51,10 +62,40 @@ export class ScenarioBuilder {
       new EscenarioComponent(
         escenario.id,
         escenario.titulo,
-        escenario.descripcion
+        escenario.descripcion,
+        escenario.presupuestoInicial
       )
     );
     return entidadEscenario;
+  }
+
+  crearAtaque(ataque: any) {
+    const entidadAtaque = this.ecsManager.agregarEntidad();
+    this.ecsManager.agregarComponente(
+      entidadAtaque,
+      new AtaqueComponent(
+        ataque.nombreAtaque,
+        ataque.tiempoNotificacion,
+        ataque.tipoAtaque,
+        ataque.dispositivoAAtacar,
+        ataque.descripcion,
+        ataque.fase,
+        ataque.condicionMitigacion
+      )
+    );
+  }
+
+  crearFase(fase: any) {
+    const entidadFase = this.ecsManager.agregarEntidad();
+    this.ecsManager.agregarComponente(
+      entidadFase,
+      new FaseComponent(
+        fase.id,
+        fase.nombre,
+        fase.descripcion,
+        fase.faseActual
+      )
+    );
   }
 
   crearZona(zona: any, escenarioEntidad?: Entidad): Entidad {
@@ -132,7 +173,8 @@ export class ScenarioBuilder {
         dispositivo.nombre,
         dispositivo.sistemaOperativo,
         dispositivo.hardware,
-        dispositivo.tipo
+        dispositivo.tipo,
+        dispositivo.estadoAtaque
       )
     );
     this.ecsManager.agregarComponente(
@@ -144,6 +186,12 @@ export class ScenarioBuilder {
         dispositivo.posicion.rotacionY
       )
     );
+    // TO-DO: agregar condicional para cada tipo de dispositivo segun dispositivo.tipo (IMPORTANTE)
+    this.ecsManager.agregarComponente(
+      entidadDispositivo,
+      new WorkstationComponent()
+    );
+
     const disEntidad = entidadDispositivo;
     if (disEntidad != null) {
       const relacion = new SistemaRelaciones(

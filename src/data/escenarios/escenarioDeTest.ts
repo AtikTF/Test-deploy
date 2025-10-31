@@ -3,6 +3,7 @@ import { Mueble, TipoDispositivo } from "../../types/DeviceEnums";
 export const escenarioDeTest: any = {
   id: 1,
   titulo: "Escenario Introductorio",
+  presupuestoInicial: 1000,
   zonas: [
     {
       id: 1,

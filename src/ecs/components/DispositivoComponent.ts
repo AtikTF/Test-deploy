@@ -1,4 +1,4 @@
-import type { TipoDispositivo } from "../../types/DeviceEnums";
+import type { EstadoAtaqueDispositivo, TipoDispositivo } from "../../types/DeviceEnums";
 import { Componente } from "../core/Componente";
 
 export class DispositivoComponent extends Componente {
@@ -6,7 +6,8 @@ export class DispositivoComponent extends Componente {
     public nombre: string = "",
     public sistemaOperativo: string = "",
     public hardware: string = "",
-    public tipo: TipoDispositivo
+    public tipo: TipoDispositivo,
+    public estadoAtaque: EstadoAtaqueDispositivo 
   ) {
     super();
   }

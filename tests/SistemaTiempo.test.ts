@@ -16,13 +16,10 @@ describe('SistemaTiempo y TimeComponent', () => {
         const t = c!.get(TiempoComponent);
         expect(t.transcurrido).toBe(0);
     
-        // simular 2 frames
-        t.delta = 0.016;
-        t.transcurrido += t.delta;
-        t.delta = 0.016;
-        t.transcurrido += t.delta;
+        // simular 2 segundos
+        t.transcurrido += 2;
     
-        expect(t.transcurrido).toBeCloseTo(0.032, 3);
+        expect(t.transcurrido).toBe(2);
     });
   
     test('pausar impide que el valor de trasncurrido aumente', () => {
@@ -36,25 +33,44 @@ describe('SistemaTiempo y TimeComponent', () => {
         const t = c.get(TiempoComponent);
         
         // avanzar un poco
-        t.delta = 0.1;
-        t.transcurrido += t.delta;
-        expect(t.transcurrido).toBeCloseTo(0.1, 3);
+        t.transcurrido += 1;
+        expect(t.transcurrido).toBe(1);
         
         // pausar
         sistema.pausar(entidad);
         expect(t.pausado).toBe(true);
         
-        // intentar avanzar
-        t.delta = 0.2;
-        if (!t.pausado) t.transcurrido += t.delta; // perdonen el if, esto no supe cómo más hacerle porque es algo que se controla externamente xd
+        // intentar avanzar estando pausado
+        if(!t.pausado) t.transcurrido += 1;
+        expect(t.transcurrido).toBe(1);
+    });
+
+    test("reanudar continua el tiempo desde donde se quedó", () =>{
+        const em = new ECSManager();
+        const entidad = em.agregarEntidad();
+        em.agregarComponente(entidad, new TiempoComponent());
+        const sistema = new SistemaTiempo();
+        em.agregarSistema(sistema);
         
-        expect(t.transcurrido).toBeCloseTo(0.1, 3);
+        const c = em.getComponentes(entidad)!;
+        const t = c.get(TiempoComponent);
+        
+        // avanzar un poco
+        t.transcurrido += 1;
+        expect(t.transcurrido).toBe(1);
+        
+        // pausar
+        sistema.pausar(entidad);
+        expect(t.pausado).toBe(true);
+        
+        // intentar avanzar estando pausado
+        if(!t.pausado) t.transcurrido += 1;
+        expect(t.transcurrido).toBe(1);
         
         // reanudar
         sistema.reanudar(entidad);
         expect(t.pausado).toBe(false);
-        t.delta = 0.05;
-        t.transcurrido += t.delta;
-        expect(t.transcurrido).toBeCloseTo(0.15, 3);
+        t.transcurrido += 1;
+        expect(t.transcurrido).toBe(2);
     });
 });
