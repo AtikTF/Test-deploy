@@ -14,6 +14,7 @@ export interface Escenario {
   zonas: Entidad[];
   ataques: AtaqueComponent[];
   fases: FaseComponent[];
+  redes: Entidad[];
 }
 
 export interface Zona {
@@ -34,7 +35,6 @@ export interface Dispositivo {
   entidadId?: number;
   // Configuraciones del Workstation si aplica (las provee WorkstationComponent)
   configuraciones?: unknown;
-  redes: string[];
   activos: Activo[];
 }
 

@@ -39,6 +39,14 @@ export const escenarioBase: unknown = {
       faseActual: true,
     },
   ],
+  redes: [
+    {
+      nombre: "LAN1",
+      color: "#00DD00",
+      dispositivosConectados: ["Computadora Administrativa", "Computadora Jacob"],
+      zona: "Edificio Principal - Piso 1"
+    },
+  ],
   zonas: [
     {
       id: 1,
@@ -63,7 +71,6 @@ export const escenarioBase: unknown = {
                   software: "Apache, MySQL, PHP",
                   posicion: { x: 0, y: 0, z: 0, rotacionY: 0 },
                   estadoAtaque: EstadoAtaqueDispositivo.NORMAL,
-                  redes: ["LAN1"],
                   activos: [
                     {
                       nombre: "Activo1",
@@ -87,7 +94,6 @@ export const escenarioBase: unknown = {
                   software: "IDS/IPS, VPN",
                   posicion: { x: 3, y: 0, z: 0, rotacionY: 180 },
                   estadoAtaque: EstadoAtaqueDispositivo.NORMAL,
-                  redes: ["LAN1"],
                   activos: [], 
                 },
               ],

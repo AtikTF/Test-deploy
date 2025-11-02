@@ -1,4 +1,5 @@
 import { ActivoComponent, DispositivoComponent } from "../components";
+import { RedComponent } from "../components";
 import { Sistema } from "../core";
 
 export class SistemaRed extends Sistema {
@@ -6,14 +7,23 @@ export class SistemaRed extends Sistema {
     
     public enviarActivo(entidadDispEnvio: number, entidadDispReceptor: number, activo: any) {
         const c1 = this.ecsManager.getComponentes(entidadDispEnvio);
-        const redesDispE = c1?.get(DispositivoComponent).redes;
+        const dispEnvio = c1?.get(DispositivoComponent)?.nombre;
+        const redes = this.getRedes();
 
         const c2 = this.ecsManager.getComponentes(entidadDispReceptor);
-        const redesDispR = c2?.get(DispositivoComponent).redes;
-        const activosDispR = c2?.get(ActivoComponent).activos;
+        const dispReceptor = c2?.get(DispositivoComponent)?.nombre;
+        const activosDispR = c2?.get(ActivoComponent)?.activos;
 
         // Verificamos que el receptor esté también conectado en al menos una red del de envío
-        if (!redesDispE?.some(red => redesDispR?.includes(red))){
+        let incluyeAmbosDisp: boolean = false;
+        redes.forEach((red: RedComponent) => {
+            if(red.dispositivosConectados.includes(dispEnvio!) &&
+               red.dispositivosConectados.includes(dispReceptor!)){
+                incluyeAmbosDisp = true; 
+            }
+        });
+
+        if (!incluyeAmbosDisp){
             console.log("El dispositivo receptor no está conectado a una red del dispositivo de envío");
             return;
         }
@@ -29,8 +39,16 @@ export class SistemaRed extends Sistema {
 
         this.ecsManager.emit("red:activoEnviado", {
             nombreActivo: activo.nombre,
-            d1: c1?.get(DispositivoComponent).nombre,
-            d2: c2?.get(DispositivoComponent).nombre
+            d1: dispEnvio,
+            d2: dispReceptor
         });
+    }
+
+    private getRedes(): RedComponent[] {
+        const redes: RedComponent[] = [];
+        this.ecsManager.getEntidades().forEach((container) => {
+            if(container.tiene(RedComponent)) redes.push(container.get(RedComponent)!)
+        });
+        return redes;
     }
 }

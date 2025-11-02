@@ -20,6 +20,7 @@ import {
   TipoDispositivo,
   EstadoAtaqueDispositivo,
 } from "../../types/DeviceEnums";
+import { RedComponent } from "../components/RedComponent";
 /**
  * Builder para crear escenarios de forma declarativa y simple
  * Facilita la construcción inicial y modificaciones posteriores
@@ -46,9 +47,13 @@ export class ScenarioBuilder {
       this.crearFase(fase);
     });
 
+    escenario.redes.forEach((red: unknown) => {
+      this.crearRed(red);
+    });
+
     escenario.zonas.forEach((zona: unknown) => {
       const zonaEntidad = this.crearZona(zona, escenarioPadre);
-      const z = zona as { oficinas?: unknown[] };
+      const z = zona as { oficinas?: unknown[]; };
       (z.oficinas ?? []).forEach((oficina: unknown) => {
         const oficinaEntidad = this.crearOficina(oficina, zonaEntidad);
         const ofi = oficina as { espacios?: unknown[] };
@@ -134,7 +139,7 @@ export class ScenarioBuilder {
 
   crearZona(zona: unknown, escenarioEntidad?: Entidad): Entidad {
     const entidadZona = this.ecsManager.agregarEntidad();
-    const z = zona as { id: number; nombre: string };
+    const z = zona as { id: number; nombre: string; };
     this.ecsManager.agregarComponente(
       entidadZona,
       new ZonaComponent(z.id, z.nombre)
@@ -150,6 +155,23 @@ export class ScenarioBuilder {
       relacion.agregar(escEntidad, entidadZona);
     }
     return entidadZona;
+  }
+
+  crearRed(red: unknown) {
+    const r = red as {
+      nombre: string;
+      color: string;
+      dispositivosConectados: string[];
+      zona: string;
+    }
+    const entidadRed = this.ecsManager.agregarEntidad();
+    const redComponente = new RedComponent(
+      r.nombre,
+      r.color,
+      r.dispositivosConectados,
+      r.zona
+    )
+    this.ecsManager.agregarComponente(entidadRed, redComponente);
   }
 
   crearOficina(oficina: unknown, zonaId: number): Entidad {
@@ -223,8 +245,7 @@ export class ScenarioBuilder {
         d.sistemaOperativo ?? "",
         d.hardware ?? "",
         d.tipo as unknown as TipoDispositivo,
-        d.estadoAtaque as EstadoAtaqueDispositivo,
-        d.redes ?? []
+        d.estadoAtaque as EstadoAtaqueDispositivo
       )
     );
     this.ecsManager.agregarComponente(
@@ -237,7 +258,7 @@ export class ScenarioBuilder {
       )
     );
 
-    switch (dispositivo.tipo) {
+    switch (d.tipo) {
       case TipoDispositivo.WORKSTATION: {
         this.ecsManager.agregarComponente(
           entidadDispositivo,

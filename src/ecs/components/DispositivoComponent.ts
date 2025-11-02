@@ -7,8 +7,7 @@ export class DispositivoComponent extends Componente {
     public sistemaOperativo: string = "",
     public hardware: string = "",
     public tipo: TipoDispositivo,
-    public estadoAtaque: EstadoAtaqueDispositivo,
-    public redes: string[]
+    public estadoAtaque: EstadoAtaqueDispositivo
   ) {
     super();
   }
