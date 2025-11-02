@@ -10,9 +10,9 @@ export default function PanelConfiguraciones() {
     const [checkedItems, setCheckedItems] = useState<boolean[]>(
         new Array(baseConfiguraciones.length).fill(false)
     );
-
     const { toggleConfigWorkstation } = useECSSceneContext();
     const { dispositivoSeleccionado } = useEscenario();
+    const { presupuesto } = useECSSceneContext();
 
     // Cuando cambia el dispositivo seleccionado, inicializamos los checks desde sus configuraciones
     useEffect(() => {
@@ -39,7 +39,6 @@ export default function PanelConfiguraciones() {
         }
 
         toggleConfigWorkstation(entidadId, configuracion);
-        console.log(`Toggle configuración: ${configuracion}, Nuevo estado: ${checked} para entidad: ${entidadId}`);
         const newCheckedItems = [...checkedItems];
         newCheckedItems[index] = checked;
         setCheckedItems(newCheckedItems);
@@ -50,15 +49,21 @@ export default function PanelConfiguraciones() {
             <h2> Configuraciones</h2>
         </div>
         <div className={styles.listaConfiguraciones}>
-            {baseConfiguraciones.map((configuracion, index) => (
-                <CheckableItem
-                    key={index}
-                    label={configuracion.configuracion}
-                    price={configuracion.precio}
-                    checked={checkedItems[index]}
-                    onChange={(checked) => handleCheckChange(index, checked, configuracion.configuracion)}
-                />
-            ))}
+            {baseConfiguraciones.map((configuracion, index) => {
+                const isChecked = checkedItems[index];
+                const price = isChecked ? configuracion.precio / 2 : configuracion.precio;
+
+                return (
+                    <CheckableItem
+                        key={index}
+                        label={configuracion.configuracion}
+                        price={configuracion.precio}
+                        checked={isChecked}
+                        disabled={presupuesto < price}
+                        onChange={(checked) => handleCheckChange(index, checked, configuracion.configuracion)}
+                    />
+                );
+            })}
         </div>
     </div>;
 }
