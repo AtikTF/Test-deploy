@@ -16,6 +16,8 @@ interface EscenarioContextType {
     dispositivoSeleccionado: Dispositivo | null;
     // Acepta un Dispositivo ya normalizado, null, o una entidad/objeto proveniente del ECS
     setDispositivoSeleccionado: (dispositivo: Dispositivo | null | unknown) => void;
+    // ID de la entidad seleccionada (puede ser dispositivo o espacio)
+    entidadSeleccionadaId: number | null;
 }
 
 /**
@@ -35,6 +37,8 @@ export function EscenarioProvider({ children, initialEscenario = escenarioBase a
     const [escenario, setEscenario] = useState<Escenario>(initialEscenario);
     // Estado real
     const [dispositivoSeleccionado, setDispositivoSeleccionadoState] = useState<Dispositivo | null>(null);
+    // ID de la entidad seleccionada (dispositivo o espacio)
+    const [entidadSeleccionadaId, setEntidadSeleccionadaId] = useState<number | null>(null);
 
     // Helper: normaliza distintos shapes que pueden venir al seleccionar una entidad 3D
     const mapEntityToDispositivo = (input: unknown): Dispositivo | null => {
@@ -146,10 +150,19 @@ export function EscenarioProvider({ children, initialEscenario = escenarioBase a
     const setDispositivoSeleccionado = (dispositivo: Dispositivo | null | unknown) => {
         const mapped = mapEntityToDispositivo(dispositivo);
         setDispositivoSeleccionadoState(mapped);
+
+        // Actualizar también el ID de la entidad seleccionada
+        if (!dispositivo) {
+            setEntidadSeleccionadaId(null);
+        } else {
+            const raw = dispositivo as Record<string, unknown>;
+            const id = raw.entidadId as number | undefined;
+            setEntidadSeleccionadaId(id ?? null);
+        }
     };
 
     return (
-        <EscenarioContext.Provider value={{ escenario, setEscenario, dispositivoSeleccionado, setDispositivoSeleccionado }}>
+        <EscenarioContext.Provider value={{ escenario, setEscenario, dispositivoSeleccionado, setDispositivoSeleccionado, entidadSeleccionadaId }}>
             {children}
         </EscenarioContext.Provider>
     );

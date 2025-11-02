@@ -31,16 +31,66 @@ export function useECSScene() {
   const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0);
   const [mostrarNuevoLog, setMostrarNuevoLog] = useState(false);
   const [mensajeLog, setMensajeLog] = useState("");
+  const [tiempoLog, setTiempoLog] = useState(0);
+  const [tipoLog, setTipoLog] = useState<
+    "ataque" | "advertencia" | "completado"
+  >("advertencia");
+  const [logs, setLogs] = useState<
+    Array<{ time: string; content: string; category: string }>
+  >([]);
   const [isPaused, setIsPaused] = useState(false);
   const [presupuesto, setPresupuesto] = useState(0);
+  const [logsPanelOpen, setLogsPanelOpen] = useState(false);
+  const [hasNewLog, setHasNewLog] = useState(false);
 
   // useRef para evitar múltiples inicializaciones
   const inicializado = useRef(false);
   const tiempoIniciadoRef = useRef(false);
+  const lastSeenCountRef = useRef(0);
 
   const escenarioController = useMemo(
     () => EscenarioController.getInstance(escenario),
     [escenario]
+  );
+
+  // Función helper para formatear tiempo
+  const formatearTiempo = (segundos: number): string => {
+    const minutos = Math.floor(segundos / 60);
+    const segs = Math.floor(segundos % 60);
+    return `${minutos.toString().padStart(2, "0")}:${segs
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  // Función helper para agregar un log
+  const agregarLog = useCallback(
+    (content: string, category: string) => {
+      const tiempo = escenarioController.tiempoTranscurrido;
+      const nuevoLog = {
+        time: formatearTiempo(tiempo),
+        content,
+        category,
+      };
+      setLogs((prev) => [...prev, nuevoLog]);
+      // Si el panel está cerrado, marcar que hay logs nuevos
+      if (!logsPanelOpen) {
+        setHasNewLog(true);
+      }
+    },
+    [escenarioController, logsPanelOpen]
+  );
+
+  // Función para abrir/cerrar el panel de logs
+  const toggleLogsPanel = useCallback(
+    (isOpen: boolean) => {
+      setLogsPanelOpen(isOpen);
+      if (isOpen) {
+        // Al abrir el panel, marcar todos los logs como vistos
+        setHasNewLog(false);
+        lastSeenCountRef.current = logs.length;
+      }
+    },
+    [logs.length]
   );
 
   // NO llamar ejecutarTiempo() ni efectuarPresupuesto() aquí
@@ -49,7 +99,6 @@ export function useECSScene() {
   useEffect(() => {
     // Evitar múltiples inicializaciones
     if (inicializado.current) {
-      console.log("Hook ya inicializado, omitiendo");
       return;
     }
 
@@ -78,6 +127,18 @@ export function useECSScene() {
         setPresupuesto(d.presupuesto);
       }
     );
+    const unsubscribeNotificacionAtaque = escenarioController.on(
+      "tiempo:notificacionAtaque",
+      (data: unknown) => {
+        const d = data as { descripcionAtaque: string };
+        setMostrarNuevoLog(true);
+        setMensajeLog(d.descripcionAtaque);
+        setTiempoLog(escenarioController.tiempoTranscurrido);
+        setTipoLog("advertencia");
+        agregarLog(d.descripcionAtaque, "ADVERTENCIA");
+        pause();
+      }
+    );
 
     const unsubscribeActualizado = escenarioController.on(
       "tiempo:actualizado",
@@ -101,8 +162,13 @@ export function useECSScene() {
       (data: unknown) => {
         const ataque = (data as unknown as { ataque?: { tipoAtaque?: string } })
           .ataque;
+        const mensaje = `${ataque?.tipoAtaque ?? ""}`;
         setMostrarNuevoLog(true);
-        setMensajeLog(`Ataque ejecutado: ${ataque?.tipoAtaque ?? ""}`);
+        setMensajeLog(mensaje);
+        setTiempoLog(escenarioController.tiempoTranscurrido);
+        setTipoLog("ataque");
+        agregarLog(mensaje, "ATAQUE");
+        pause();
       }
     );
 
@@ -111,8 +177,13 @@ export function useECSScene() {
       (data: unknown) => {
         const ataque = (data as unknown as { ataque?: { tipoAtaque?: string } })
           .ataque;
+        const mensaje = `Ataque mitigado: ${ataque?.tipoAtaque ?? ""}`;
         setMostrarNuevoLog(true);
-        setMensajeLog(`Ataque mitigado: ${ataque?.tipoAtaque ?? ""}`);
+        setMensajeLog(mensaje);
+        setTiempoLog(escenarioController.tiempoTranscurrido);
+        setTipoLog("completado");
+        agregarLog(mensaje, "INFO");
+        pause();
       }
     );
 
@@ -133,6 +204,7 @@ export function useECSScene() {
       unsubscribeReanudado();
       unsubscribeAtaqueRealizado();
       unsubscribeAtaqueMitigado();
+      unsubscribeNotificacionAtaque();
     };
   }, []); // Sin dependencias - solo se ejecuta una vez
 
@@ -228,6 +300,12 @@ export function useECSScene() {
     entities,
     mostrarNuevoLog,
     mensajeLog,
+    tiempoLog,
+    tipoLog,
+    logs,
+    hasNewLog,
+    logsPanelOpen,
+    toggleLogsPanel,
     setMostrarNuevoLog,
     setMensajeLog,
     ecsManager: escenarioController.ecsManager,
