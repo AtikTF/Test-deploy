@@ -4,6 +4,7 @@ import {
   PresupuestoComponent,
   DispositivoComponent,
 } from "../components";
+import { AccionesRealizables, ObjetosManejables } from "../../types/AccionesEnums";
 
 export class SistemaPresupuesto extends Sistema {
   public componentesRequeridos = new Set([PresupuestoComponent]);
@@ -49,8 +50,8 @@ export class SistemaPresupuesto extends Sistema {
         const dispositivoComp =
           componentesEntidadWorkstation?.get(DispositivoComponent);
         this.ecsManager.registrarAccion(
-          "Click",
-          "Configuracion Workstation",
+          AccionesRealizables.CLICK,
+          ObjetosManejables.CONFIG_WORKSTATION,
           -1,
           {
             nombreConfig: listaConfigsWorkstation[i].nombreConfig,
@@ -82,8 +83,8 @@ export class SistemaPresupuesto extends Sistema {
         const dispositivoComp =
           componentesEntidadWorkstation?.get(DispositivoComponent);
         this.ecsManager.registrarAccion(
-          "Click",
-          "Configuracion Workstation",
+          AccionesRealizables.CLICK,
+          ObjetosManejables.CONFIG_WORKSTATION,
           -1,
           {
             nombreConfig: listaConfigsWorkstation[i].nombreConfig,

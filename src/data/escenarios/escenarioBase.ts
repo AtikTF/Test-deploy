@@ -1,3 +1,4 @@
+import { AccionesRealizables, ObjetosManejables } from "../../types/AccionesEnums";
 import {
   EstadoAtaqueDispositivo,
   Mueble,
@@ -20,8 +21,8 @@ export const escenarioBase: unknown = {
         "Un dispositivo está por ser infectado con un troyano. Revisa la activación del antivirus para evitarlo.",
       fase: 1,
       condicionMitigacion: {
-        accion: "Click",
-        objeto: "Configuracion Workstation",
+        accion: AccionesRealizables.CLICK,
+        objeto: ObjetosManejables.CONFIG_WORKSTATION,
         tiempo: -1,
         val: {
           nombreConfig: "Actualizaciones automáticas de antivirus",

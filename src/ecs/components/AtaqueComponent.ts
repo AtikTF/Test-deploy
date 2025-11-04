@@ -3,7 +3,7 @@ import { EventoComponent } from "./EventoComponent";
 
 export class AtaqueComponent extends EventoComponent {
   constructor(
-    public nombreEvento: string,
+    public nombreAtaque: string,
     /* Tiempo en segundos en el que se notificará un futuro ataque desde que sucedió un evento. Ej: inició la simulación,
      * se hizo toggle a una config específica, etc.
      * No debe tomar en cuenta mientras está pausado. Ej: si se define tiempoNotificacion = 10 al inicio de la simulación,
@@ -27,6 +27,6 @@ export class AtaqueComponent extends EventoComponent {
      */
     public tiempoEnOcurrir: number = tiempoNotificacion + 10
   ) {
-    super(nombreEvento, tiempoNotificacion, descripcion, fase);
+    super(nombreAtaque, tiempoNotificacion, descripcion, fase);
   }
 }
