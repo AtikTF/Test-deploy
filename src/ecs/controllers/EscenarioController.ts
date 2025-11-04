@@ -7,10 +7,10 @@ import {
   WorkstationComponent,
 } from "../components";
 import { ECSManager, type Entidad } from "../core";
-import { SistemaEvento, SistemaPresupuesto, SistemaRed, SistemaTiempo } from "../systems";
+import { SistemaEvento, SistemaPresupuesto, SistemaTiempo } from "../systems";
 import { ScenarioBuilder } from "../utils/ScenarioBuilder";
 import type { Escenario } from "../../types/EscenarioTypes";
-import { EventosAtaque, EventosPresupuesto, EventosRed, EventosTiempo } from "../../types/EventosEnums";
+import { EventosAtaque, EventosPresupuesto, EventosTiempo } from "../../types/EventosEnums";
 
 export class EscenarioController {
   public escenario: Escenario;
@@ -22,7 +22,6 @@ export class EscenarioController {
   private sistemaPresupuesto?: SistemaPresupuesto;
   private entidadPresupuesto?: Entidad;
   private sistemaEvento?: SistemaEvento;
-  private sistemaRed?: SistemaRed;
   private escenarioIniciado: boolean = false; // FLAG PARA EVITAR MÚLTIPLES INICIALIZACIONES
 
   private static instance: EscenarioController | null = null;
@@ -59,12 +58,7 @@ export class EscenarioController {
     if (!this.sistemaEvento) {
       this.sistemaEvento = new SistemaEvento();
       this.ecsManager.agregarSistema(this.sistemaEvento);
-    }
-
-    if (!this.sistemaRed) {
-      this.sistemaRed = new SistemaRed();
-      this.ecsManager.agregarSistema(this.sistemaRed);
-    }
+    } 
 
     // NO emitir el evento aquí - lo haremos después de que los sistemas se suscriban
     this.ecsManager.on(EventosTiempo.TIEMPO_NOTIFICACION_ATAQUE, (data: unknown) => {
@@ -106,19 +100,7 @@ export class EscenarioController {
     this.ecsManager.on(EventosPresupuesto.PRESUPUESTO_AGOTADO, () => {
       this.sistemaTiempo?.pausar(this.entidadTiempo!);
       console.log("Se agotó el presupuesto, fin de la partida.");
-    });
-
-    this.ecsManager.on(EventosRed.RED_ENVIAR_ACTIVO, (data: unknown) => {
-      const d = data as { evento: unknown };
-      this.sistemaRed?.enviarActivo(d.evento.infoAdicional.dispositivoEmisor,
-                                    d.evento.infoAdicional.dispositivoReceptor,
-                                    d.evento.infoAdicional.nombreActivo);
-    });
-
-    this.ecsManager.on(EventosRed.RED_ACTIVO_ENVIADO, (data: unknown) => {
-      const d = data as { d1: string, d2: string, nombreActivo: string };
-      console.log(`Se envió el activo "${d.nombreActivo}" desde ${d.d1} hacia ${d.d2}.`);
-    });
+    }); 
 
     this.escenarioIniciado = true;
   }

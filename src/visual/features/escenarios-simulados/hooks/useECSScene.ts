@@ -5,6 +5,7 @@ import { getDispositivoHeight } from "../config/modelConfig";
 import { useEscenarioActual } from "../../../common/contexts/EscenarioContext";
 import { EscenarioController } from "../../../../ecs/controllers/EscenarioController";
 import { EventosAtaque, EventosPresupuesto, EventosTiempo } from "../../../../types/EventosEnums";
+import { RedController } from "../../../../ecs/controllers/RedController";
 
 export interface ECSSceneEntity {
   entidadId: Entidad;
@@ -51,6 +52,11 @@ export function useECSScene() {
 
   const escenarioController = useMemo(
     () => EscenarioController.getInstance(escenario),
+    [escenario]
+  );
+
+  const redController = useMemo(
+    () => RedController.getInstance(escenarioController.ecsManager),
     [escenario]
   );
 
@@ -117,7 +123,9 @@ export function useECSScene() {
     setEntities(escenarioController.builder.getEntidades());
     setIsPaused(escenarioController.estaTiempoPausado());
     setPresupuesto(escenarioController.getPresupuestoActual());
-    // SEXTO: Iniciar el tiempo automáticamente desde useEffect
+    // SEXTO: Iniciar sistema de red
+    redController.iniciarController();
+    // SÉPTIMO: Iniciar el tiempo automáticamente desde useEffect
     escenarioController.iniciarTiempo();
     tiempoIniciadoRef.current = true;
 
