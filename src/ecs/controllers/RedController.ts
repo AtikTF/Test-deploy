@@ -1,4 +1,5 @@
 import { EventosRed } from "../../types/EventosEnums";
+import { TipoProtocolo } from "../../types/TrafficEnums";
 import type { ECSManager } from "../core";
 import { SistemaRed } from "../systems";
 
@@ -36,8 +37,9 @@ export class RedController {
 
     this.ecsManager.on(EventosRed.RED_ENVIAR_ACTIVO, (data: unknown) => {
       const d = data as { evento: unknown };
-      this.sistemaRed?.enviarActivo(d.evento.infoAdicional.dispositivoEmisor,
+      this.sistemaRed?.enviarTrafico(d.evento.infoAdicional.dispositivoEmisor,
                                     d.evento.infoAdicional.dispositivoReceptor,
+                                    TipoProtocolo.FTP,
                                     d.evento.infoAdicional.nombreActivo);
     });
 

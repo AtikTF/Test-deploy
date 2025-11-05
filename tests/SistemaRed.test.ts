@@ -3,6 +3,7 @@ import { ECSManager } from '../src/ecs/core';
 import { SistemaRed } from '../src/ecs/systems';
 import { EstadoAtaqueDispositivo, TipoDispositivo } from '../src/types/DeviceEnums';
 import { ActivoComponent, DispositivoComponent, RedComponent } from '../src/ecs/components';
+import { TipoProtocolo } from '../src/types/TrafficEnums';
 
 describe("SistemaRed", () => {
     test("se pueden enviar activos entre dispositivos de la misma red", () => {
@@ -33,7 +34,7 @@ describe("SistemaRed", () => {
         sistema.asignarRed(nombreDisp2, red.nombre);
 
         // Se envía el activo
-        sistema.enviarActivo(nombreDisp1, nombreDisp2, activoComponente.activos[0].nombre);
+        sistema.enviarTrafico(nombreDisp1, nombreDisp2, TipoProtocolo.FTP, activoComponente.activos[0].nombre);
 
         expect(activoComponente2.activos.includes(activoComponente.activos[0])).toBe(true);
     });

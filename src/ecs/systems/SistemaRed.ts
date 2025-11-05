@@ -1,7 +1,7 @@
 import { ActivoComponent, DispositivoComponent } from "../components";
 import { RedComponent } from "../components";
 import { Sistema } from "../core";
-import type { TipoProtocolo, RegistroTrafico } from "../../types/TrafficEnums";
+import { TipoProtocolo, type RegistroTrafico } from "../../types/TrafficEnums";
 import { PROTOCOLOS } from "../../types/TrafficEnums";
 import { EventosRed } from "../../types/EventosEnums";
 import type { Activo } from "../../types/EscenarioTypes";
@@ -26,14 +26,70 @@ export class SistemaRed extends Sistema {
         }
 
         red?.dispositivosConectados.push(nombreDisp);
+    } 
+
+    public enviarTrafico(
+        dispOrigen: string,
+        dispDestino: string,
+        protocolo: TipoProtocolo,
+        payload: unknown
+    ): boolean {
+        // Verificar conectividad
+        if (!this.estanConectados(dispOrigen, dispDestino)) {
+            console.log(`${dispOrigen} y ${dispDestino} no están en la misma red`);
+            return false;
+        }
+
+        // Se verifica qué tipo de comunicación es y según eso se aplica el método correspondiente
+        switch(protocolo){
+            case TipoProtocolo.FTP: {
+                const activo = payload as string;
+                this.enviarActivo(dispOrigen, dispDestino, activo);
+                break;
+            }
+            // Próximamente para otros protocolos
+        }
+
+        // Tráfico exitoso
+        this.mostrarInfoTrafico(dispOrigen, dispDestino, protocolo);
+        this.registrarTrafico(dispOrigen, dispDestino, protocolo);
+        
+        return true;
     }
 
-    public enviarActivo(dispEnvio: string, dispReceptor: string, activo: string): void {
+    // public enviarTrafico(
+    //     entidadOrigen: number,
+    //     entidadDestino: number,
+    //     protocolo: TipoProtocolo
+    // ): boolean {
+    //     // Obtener dispositivos
+    //     const dispOrigen = this.getDispositivo(entidadOrigen);
+    //     const dispDestino = this.getDispositivo(entidadDestino);
+    //     // Podría eliminarse si se asume que las entidades siempre son válidas
+    //     if (!dispOrigen || !dispDestino) {
+    //         console.log("Dispositivos no encontrados");
+    //         return false;
+    //     }
+    //
+    //     // Verificar conectividad
+    //     if (!this.estanConectados(dispOrigen.nombre, dispDestino.nombre)) {
+    //         console.log(`${dispOrigen.nombre} y ${dispDestino.nombre} no están en la misma red`);
+    //         return false;
+    //     }
+    //
+    //     // Tráfico exitoso
+    //     this.mostrarInfoTrafico(dispOrigen.nombre, dispDestino.nombre, protocolo);
+    //     this.registrarTrafico(dispOrigen.nombre, dispDestino.nombre, protocolo);
+    //
+    //     return true;
+    // }
+
+    private enviarActivo(dispEnvio: string, dispReceptor: string, activo: string): void {
         // Verificar conectividad
-        if (!this.estanConectados(dispEnvio, dispReceptor)) {
-            console.log("El dispositivo receptor no está conectado a una red del dispositivo de envío");
-            return;
-        }
+        // if (!this.estanConectados(dispEnvio, dispReceptor)) {
+        //     console.log("El dispositivo receptor no está conectado a una red del dispositivo de envío");
+        //     return;
+        // }
 
         // Obtener lista de activos del receptor
         let activosDispR;
@@ -45,7 +101,7 @@ export class SistemaRed extends Sistema {
         }
 
         if (!activosDispR) {
-            console.log("El dispositivo receptor no tiene componente de activos");
+            console.warn("El dispositivo receptor no tiene componente de activos");
             return;
         }
 
@@ -61,7 +117,7 @@ export class SistemaRed extends Sistema {
         // Verificar si el receptor ya tiene el activo
         if (activosDispR.some(a => a.nombre === activoAenviar.nombre &&
                                    a.contenido === activoAenviar.contenido)) {
-            console.log("El dispositivo receptor ya contiene activo:", activo);
+            console.warn("El dispositivo receptor ya contiene activo:", activo);
             return;
         }
  
@@ -75,33 +131,6 @@ export class SistemaRed extends Sistema {
         });
     }
 
-    public enviarTrafico(
-        entidadOrigen: number,
-        entidadDestino: number,
-        protocolo: TipoProtocolo
-    ): boolean {
-        // Obtener dispositivos
-        const dispOrigen = this.getDispositivo(entidadOrigen);
-        const dispDestino = this.getDispositivo(entidadDestino);
-        // Podría eliminarse si se asume que las entidades siempre son válidas
-        if (!dispOrigen || !dispDestino) {
-            console.log("Dispositivos no encontrados");
-            return false;
-        }
-
-        // Verificar conectividad
-        if (!this.estanConectados(dispOrigen.nombre, dispDestino.nombre)) {
-            console.log(`${dispOrigen.nombre} y ${dispDestino.nombre} no están en la misma red`);
-            return false;
-        }
-
-        // Tráfico exitoso
-        this.mostrarInfoTrafico(dispOrigen.nombre, dispDestino.nombre, protocolo);
-        this.registrarTrafico(dispOrigen.nombre, dispDestino.nombre, protocolo);
-        
-        return true;
-    }
-
     private getRedes(): RedComponent[] {
         const redes: RedComponent[] = [];
         this.ecsManager.getEntidades().forEach((container) => {
@@ -110,10 +139,10 @@ export class SistemaRed extends Sistema {
         return redes;
     }
 
-    private getDispositivo(entidadId: number): DispositivoComponent | null {
-        const componentes = this.ecsManager.getComponentes(entidadId);
-        return componentes?.get(DispositivoComponent) || null;
-    }
+    // private getDispositivo(entidadId: number): DispositivoComponent | null {
+    //     const componentes = this.ecsManager.getComponentes(entidadId);
+    //     return componentes?.get(DispositivoComponent) || null;
+    // }
 
     private estanConectados(nombreDispOrigen: string, nombreDispDestino: string): boolean {
         const redes = this.getRedes();
@@ -123,6 +152,7 @@ export class SistemaRed extends Sistema {
             red.dispositivosConectados.includes(nombreDispDestino)
         );
     }
+    
     private mostrarInfoTrafico(
         nombreOrigen: string,
         nombreDestino: string,
