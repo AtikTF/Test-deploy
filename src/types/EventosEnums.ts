@@ -22,4 +22,10 @@ export enum EventosRed {
     RED_ENVIAR_ACTIVO = "red:enviarActivo",
     RED_ACTIVO_ENVIADO = "red:activoEnviado",
     TRAFICO_ENVIADO = "trafico:enviado",
+    FIREWALL_TRAFICO_PERMITIDO = "firewall:traficoPermitido",
+    FIREWALL_TRAFICO_BLOQUEADO = "firewall:traficoBloqueado",
+    FIREWALL_HABILITADO = "firewall:habilitado",
+    FIREWALL_DESHABILITADO = "firewall:deshabilitado",
+    FIREWALL_REGLA_AGREGADA = "firewall:reglaAgregada",
+    FIREWALL_POLITICA_CAMBIADA = "firewall:politicaCambiada",
 };

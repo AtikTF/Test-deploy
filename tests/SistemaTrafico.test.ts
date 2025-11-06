@@ -39,7 +39,7 @@ describe("SistemaTrafico", () => {
     );
 
     // Intentar tráfico (cualquier protocolo funciona)
-    const resultado = sistema.enviarTrafico(dispositivo1, dispositivo2, TipoProtocolo.SSH);
+    const resultado = sistema.enviarTrafico("disp1", "disp2", TipoProtocolo.SSH, null);
 
     expect(resultado).toBe(true);
   });
@@ -70,7 +70,7 @@ describe("SistemaTrafico", () => {
     );
 
     // Intentar tráfico entre redes diferentes (debe fallar)
-    const resultado = sistema.enviarTrafico(dispositivo1, dispositivo2, TipoProtocolo.SSH);
+    const resultado = sistema.enviarTrafico("disp1", "disp2", TipoProtocolo.SSH, null);
 
     expect(resultado).toBe(false);
   });

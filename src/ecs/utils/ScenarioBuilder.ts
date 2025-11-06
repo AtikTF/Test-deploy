@@ -23,6 +23,8 @@ import {
   TipoEvento,
 } from "../../types/DeviceEnums";
 import { RedComponent } from "../components/RedComponent";
+import { FirewallBuilder } from "./FirewallBuilder";
+
 /**
  * Builder para crear escenarios de forma declarativa y simple
  * Facilita la construcción inicial y modificaciones posteriores
@@ -296,9 +298,12 @@ export class ScenarioBuilder {
         break;
       }
       case TipoDispositivo.ROUTER: {
+        // Crear configuración de firewall inicial
+        const firewallConfig = new FirewallBuilder().build();
+        
         this.ecsManager.agregarComponente(
           entidadDispositivo,
-          new RouterComponent(false)
+          new RouterComponent(true, firewallConfig)
         );
         break;
       }

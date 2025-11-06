@@ -1,12 +1,12 @@
 // Tipos de protocolo de red
 export enum TipoProtocolo {
   // Web
-  WEB_SERVER = "WEB_SERVER",              // HTTP
-  WEB_SERVER_SSL = "WEB_SERVER_SSL",      // HTTPS
+  WEB_SERVER = "WEB_SERVER",              
+  WEB_SERVER_SSL = "WEB_SERVER_SSL",      
   
   // Email
-  EMAIL_SERVER = "EMAIL_SERVER",           // SMTP/POP3/IMAP
-  EMAIL_SERVER_SSL = "EMAIL_SERVER_SSL",   // SMTPS/POP3S/IMAPS
+  EMAIL_SERVER = "EMAIL_SERVER",           
+  EMAIL_SERVER_SSL = "EMAIL_SERVER_SSL",   
   
   // Administración remota
   TELNET = "TELNET",                       
@@ -16,7 +16,7 @@ export enum TipoProtocolo {
   FTP = "FTP",                             
   
   // Bases de datos
-  DATABASE = "DATABASE",                   // SQL Server, MySQL, PostgreSQL
+  DATABASE = "DATABASE",                   
   
   // Directorio
   LDAP = "LDAP",                          
@@ -27,13 +27,13 @@ export enum TipoProtocolo {
   DEFENSE_4T = "DEFENSE_4T",
   
   // VPN
-  VPN_GATEWAY = "VPN_GATEWAY",            // IPSec, SSL VPN
+  VPN_GATEWAY = "VPN_GATEWAY",            
   
   // Servicios corporativos
-  REPORTING = "REPORTING",                 // Logs, telemetría
-  MANAGEMENT = "MANAGEMENT",               // Gestión remota
-  NETWORK_FILE_SERVICE = "NETWORK_FILE_SERVICE", // NFS, SMB/CIFS
-  MESSAGING = "MESSAGING"                  // Chat corporativo
+  REPORTING = "REPORTING",                 
+  MANAGEMENT = "MANAGEMENT",               
+  NETWORK_FILE_SERVICE = "NETWORK_FILE_SERVICE", 
+  MESSAGING = "MESSAGING"                  
 }
 
 // Información básica de un protocolo
@@ -48,6 +48,51 @@ export interface RegistroTrafico {
   origen: string;
   destino: string;
   protocolo: TipoProtocolo;
+}
+
+// Registro de tráfico bloqueado por firewall
+export interface RegistroFirewallBloqueado {
+  origen: string;
+  destino: string;
+  protocolo: TipoProtocolo;
+  mensaje: string;
+  tipo: 'BLOQUEADO';
+  razon?: string;
+}
+
+// Registro de tráfico permitido por firewall
+export interface RegistroFirewallPermitido {
+  origen: string;
+  destino: string;
+  protocolo: TipoProtocolo;
+  mensaje: string;
+  tipo: 'PERMITIDO';
+}
+
+// Registro de configuración del firewall (habilitado/deshabilitado)
+export interface RegistroFirewallEstado {
+  router: string;
+  mensaje: string;
+  tipo: 'HABILITADO' | 'DESHABILITADO';
+}
+
+// Registro cuando se agrega una regla al firewall
+export interface RegistroFirewallRegla {
+  router: string;
+  mensaje: string;
+  tipo: 'REGLA_AGREGADA';
+  protocolo: TipoProtocolo;
+  accion: 'PERMITIR' | 'DENEGAR';
+  direccion: 'SALIENTE' | 'ENTRANTE' | 'AMBAS';
+}
+
+// Registro cuando se cambia la política por defecto
+export interface RegistroFirewallPolitica {
+  router: string;
+  mensaje: string;
+  tipo: 'POLITICA_CAMBIADA';
+  politicaAnterior: 'PERMITIR' | 'DENEGAR';
+  politicaNueva: 'PERMITIR' | 'DENEGAR';
 }
 
 // Catálogo de protocolos con sus puertos
