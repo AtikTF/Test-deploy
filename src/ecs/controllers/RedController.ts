@@ -104,12 +104,6 @@ export class RedController {
     this.sistemaRed.setPoliticaFirewall(nombreRouter, politica);
   }
 
-  public obtenerRouters(): string[] {
-    if (!this.sistemaRed) {
-      console.error("Sistema de red no inicializado");
-      return [];
-    }
-    return this.sistemaRed.obtenerRouters();
-  }
+  
 
 }
