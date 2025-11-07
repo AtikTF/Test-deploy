@@ -104,6 +104,26 @@ export class RedController {
     this.sistemaRed.setPoliticaFirewall(nombreRouter, politica);
   }
 
-  
+  public setPoliticaFirewallSaliente(
+    nombreRouter: string,
+    politica: "PERMITIR" | "DENEGAR"
+  ): void {
+    if (!this.sistemaRed) {
+      console.error("Sistema de red no inicializado");
+      return;
+    }
+    this.sistemaRed.setPoliticaFirewallSaliente(nombreRouter, politica);
+  }
+
+  public setPoliticaFirewallEntrante(
+    nombreRouter: string,
+    politica: "PERMITIR" | "DENEGAR"
+  ): void {
+    if (!this.sistemaRed) {
+      console.error("Sistema de red no inicializado");
+      return;
+    }
+    this.sistemaRed.setPoliticaFirewallEntrante(nombreRouter, politica);
+  }
 
 }

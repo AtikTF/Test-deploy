@@ -114,6 +114,30 @@ export const escenarioBase: unknown = {
                 },
               ],
             },
+            {
+              id: 3,
+              mueble: Mueble.MESA,
+              posicion: { x: 1.5, y: 0, z: 2, rotacionY: 0 },
+              dispositivos: [
+                {
+                  id: 1004,
+                  tipo: TipoDispositivo.ROUTER,
+                  nombre: "Router Principal",
+                  sistemaOperativo: "Cisco IOS",
+                  hardware: "Cisco ISR 4331",
+                  software: "Routing, Firewall",
+                  posicion: { x: 1.5, y: 0, z: 2, rotacionY: 180 },
+                  // Configuración de router
+                  conectadoAInternet: true,
+                  // Configuración de red
+                  red: {
+                    nombre: "LAN1",
+                    color: "#00DD00",
+                    dispositivosConectados: ["Computadora Administrativa", "Computadora Jacob"],
+                  },
+                },
+              ],
+            },
           ],
         },
       ],

@@ -69,10 +69,15 @@ export class ScenarioBuilder {
           const espacioEntidad = this.crearEspacio(espacio, oficinaEntidad);
           const esp = espacio as { dispositivos?: Dispositivo[] };
           (esp.dispositivos ?? []).forEach((dispositivo: Dispositivo) => {
-            const dispositivoEntidad = this.crearDispositivo(
-              dispositivo,
-              espacioEntidad
-            );
+            let dispositivoEntidad: Entidad;
+            
+            // Detectar si es un router y usar método específico
+            if (dispositivo.tipo === TipoDispositivo.ROUTER) {
+              dispositivoEntidad = this.crearRouter(dispositivo, espacioEntidad);
+            } else {
+              dispositivoEntidad = this.crearDispositivo(dispositivo, espacioEntidad);
+            }
+            
             this.crearActivos(dispositivoEntidad, dispositivo.activos);
           });
         });
@@ -269,6 +274,8 @@ export class ScenarioBuilder {
       estadoAtaque?: unknown;
       posicion?: { x: number; y: number; z: number; rotacionY?: number };
     };
+    
+    // Agregar componente de dispositivo
     this.ecsManager.agregarComponente(
       entidadDispositivo,
       new DispositivoComponent(
@@ -279,6 +286,8 @@ export class ScenarioBuilder {
         d.estadoAtaque as EstadoAtaqueDispositivo
       )
     );
+    
+    // Agregar Transform (posición 3D)
     this.ecsManager.agregarComponente(
       entidadDispositivo,
       new Transform(
@@ -289,6 +298,7 @@ export class ScenarioBuilder {
       )
     );
 
+    // Agregar componentes específicos según tipo
     switch (d.tipo) {
       case TipoDispositivo.WORKSTATION: {
         this.ecsManager.agregarComponente(
@@ -297,29 +307,89 @@ export class ScenarioBuilder {
         );
         break;
       }
-      case TipoDispositivo.ROUTER: {
-        // Crear configuración de firewall inicial
-        const firewallConfig = new FirewallBuilder().build();
-        
-        this.ecsManager.agregarComponente(
-          entidadDispositivo,
-          new RouterComponent(true, firewallConfig)
-        );
-        break;
-      }
     }
 
-    const disEntidad = entidadDispositivo;
-    if (disEntidad != null) {
-      const relacion = new SistemaRelaciones(
-        EspacioComponent,
-        DispositivoComponent,
-        "dispositivos"
-      );
-      relacion.ecsManager = this.ecsManager;
-      relacion.agregar(espacioId, disEntidad);
-    }
+    // Agregar relación con espacio
+    const relacion = new SistemaRelaciones(
+      EspacioComponent,
+      DispositivoComponent,
+      "dispositivos"
+    );
+    relacion.ecsManager = this.ecsManager;
+    relacion.agregar(espacioId, entidadDispositivo);
+    
     return entidadDispositivo;
+  }
+
+  crearRouter(router: unknown, espacioId: number): Entidad {
+    const entidadRouter = this.ecsManager.agregarEntidad();
+    const r = router as {
+      nombre?: string;
+      sistemaOperativo?: string;
+      hardware?: string;
+      tipo?: unknown;
+      posicion?: { x: number; y: number; z: number; rotacionY?: number };
+      conectadoAInternet?: boolean;
+      red?: {
+        nombre: string;
+        color: string;
+        dispositivosConectados: string[];
+      };
+    };
+    
+    // 1. Agregar DispositivoComponent (routers no tienen estadoAtaque)
+    this.ecsManager.agregarComponente(
+      entidadRouter,
+      new DispositivoComponent(
+        r.nombre ?? "",
+        r.sistemaOperativo ?? "",
+        r.hardware ?? "",
+        r.tipo as unknown as TipoDispositivo,
+        EstadoAtaqueDispositivo.NORMAL // Default para routers
+      )
+    );
+    
+    // 2. Agregar Transform (posición 3D)
+    this.ecsManager.agregarComponente(
+      entidadRouter,
+      new Transform(
+        r.posicion?.x ?? 0,
+        r.posicion?.y ?? 0,
+        r.posicion?.z ?? 0,
+        r.posicion?.rotacionY ?? 0
+      )
+    );
+
+    // 3. Agregar RouterComponent con firewall
+    const firewallConfig = new FirewallBuilder().build();
+    this.ecsManager.agregarComponente(
+      entidadRouter,
+      new RouterComponent(r.conectadoAInternet ?? true, firewallConfig)
+    );
+    
+    // 4. Si tiene configuración de red, agregar RedComponent
+    if (r.red) {
+      this.ecsManager.agregarComponente(
+        entidadRouter,
+        new RedComponent(
+          r.red.nombre,
+          r.red.color,
+          r.red.dispositivosConectados,
+          "" // zona vacía por ahora
+        )
+      );
+    }
+    
+    // 5. Agregar relación con espacio
+    const relacion = new SistemaRelaciones(
+      EspacioComponent,
+      DispositivoComponent,
+      "dispositivos"
+    );
+    relacion.ecsManager = this.ecsManager;
+    relacion.agregar(espacioId, entidadRouter);
+    
+    return entidadRouter;
   }
 
   crearActivos(entidadDispositivo: number, activos: any) {

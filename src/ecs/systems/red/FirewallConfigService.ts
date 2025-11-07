@@ -34,7 +34,7 @@ export class FirewallConfigService {
         });
     }
 
-    // Agrega una regla global al firewall de un router
+    // Agrega una regla para un protocolo específico (sobrescribe la política por defecto para ese protocolo)
     agregarReglaFirewall(
         nombreRouter: string,
         protocolo: TipoProtocolo,
@@ -65,7 +65,7 @@ export class FirewallConfigService {
         });
     }
 
-    // Agrega una excepción (regla por dispositivo específico) al firewall
+    // Agrega una excepción para un dispositivo específico (sobrescribe reglas y política)
     agregarExcepcionFirewall(
         nombreRouter: string,
         protocolo: TipoProtocolo,
@@ -101,7 +101,7 @@ export class FirewallConfigService {
         });
     }
 
-    // Cambia la política por defecto del firewall de un router
+    // Cambia la política por defecto (aplica PERMITIR/DENEGAR a TODOS los protocolos que no tengan regla específica)
     setPoliticaFirewall(
         nombreRouter: string,
         politica: "PERMITIR" | "DENEGAR"
@@ -118,7 +118,55 @@ export class FirewallConfigService {
         // Emitir evento
         this.ecsManager.emit(EventosRed.FIREWALL_POLITICA_CAMBIADA, {
             router: nombreRouter,
-            mensaje: `Política de "${nombreRouter}" cambiada de ${politicaAnterior} a ${politica}`,
+            mensaje: `Política general de "${nombreRouter}" cambiada de ${politicaAnterior} a ${politica}`,
+            tipo: 'POLITICA_CAMBIADA',
+            politicaAnterior,
+            politicaNueva: politica
+        });
+    }
+
+    // Cambia la política por defecto para tráfico SALIENTE (aplica a todos los protocolos salientes sin regla específica)
+    setPoliticaFirewallSaliente(
+        nombreRouter: string,
+        politica: "PERMITIR" | "DENEGAR"
+    ): void {
+        const router = this.obtenerRouterPorNombre(nombreRouter);
+        if (!router) {
+            console.error(`Router "${nombreRouter}" no encontrado`);
+            return;
+        }
+
+        const politicaAnterior = router.firewall.politicaPorDefectoSaliente || router.firewall.politicaPorDefecto;
+        router.firewall.politicaPorDefectoSaliente = politica;
+
+        // Emitir evento
+        this.ecsManager.emit(EventosRed.FIREWALL_POLITICA_CAMBIADA, {
+            router: nombreRouter,
+            mensaje: `Política SALIENTE de "${nombreRouter}" cambiada de ${politicaAnterior} a ${politica}`,
+            tipo: 'POLITICA_CAMBIADA',
+            politicaAnterior,
+            politicaNueva: politica
+        });
+    }
+
+    // Cambia la política por defecto para tráfico ENTRANTE (aplica a todos los protocolos entrantes sin regla específica)
+    setPoliticaFirewallEntrante(
+        nombreRouter: string,
+        politica: "PERMITIR" | "DENEGAR"
+    ): void {
+        const router = this.obtenerRouterPorNombre(nombreRouter);
+        if (!router) {
+            console.error(`Router "${nombreRouter}" no encontrado`);
+            return;
+        }
+
+        const politicaAnterior = router.firewall.politicaPorDefectoEntrante || router.firewall.politicaPorDefecto;
+        router.firewall.politicaPorDefectoEntrante = politica;
+
+        // Emitir evento
+        this.ecsManager.emit(EventosRed.FIREWALL_POLITICA_CAMBIADA, {
+            router: nombreRouter,
+            mensaje: `Política ENTRANTE de "${nombreRouter}" cambiada de ${politicaAnterior} a ${politica}`,
             tipo: 'POLITICA_CAMBIADA',
             politicaAnterior,
             politicaNueva: politica

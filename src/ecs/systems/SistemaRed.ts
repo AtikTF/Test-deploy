@@ -165,4 +165,20 @@ export class SistemaRed extends Sistema {
     ): void {
         this.getFirewallConfigService().setPoliticaFirewall(nombreRouter, politica);
     }
+
+    // Cambia la política por defecto para tráfico SALIENTE
+    public setPoliticaFirewallSaliente(
+        nombreRouter: string,
+        politica: "PERMITIR" | "DENEGAR"
+    ): void {
+        this.getFirewallConfigService().setPoliticaFirewallSaliente(nombreRouter, politica);
+    }
+
+    // Cambia la política por defecto para tráfico ENTRANTE
+    public setPoliticaFirewallEntrante(
+        nombreRouter: string,
+        politica: "PERMITIR" | "DENEGAR"
+    ): void {
+        this.getFirewallConfigService().setPoliticaFirewallEntrante(nombreRouter, politica);
+    }
 }
