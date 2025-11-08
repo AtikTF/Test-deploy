@@ -9,7 +9,6 @@ import getIconoNodo from "../utils/getIconoNodo";
 import ConexionIcon from "../../../common/icons/ConexionIcon";
 import { useState } from "react";
 import RedChip from "./RedChip";
-import CheckableItem from "../../../common/components/CheckableItem";
 
 function DeviceNode({ data }: any) {
     return (

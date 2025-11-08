@@ -1,0 +1,274 @@
+/* Container principal */
+.modalFirewallContainer {
+  width: 700px;
+  max-width: 100%;
+  padding: 8px;
+}
+
+.modalFirewallTitle {
+  font-weight: normal;
+  margin-bottom: 8px;
+}
+
+.descripcion {
+  font-size: 14px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  margin-bottom: 24px;
+}
+
+/* Selector de red */
+.selectorRed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.labelRed {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #fff);
+  min-width: 40px;
+}
+
+.selectorRed > div {
+  flex: 1;
+  max-width: 200px;
+}
+
+/* Grid de reglas */
+.reglasGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.redSection {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 2rem;
+  transition: all 0.2s ease;
+  user-select: none;
+  box-sizing: border-box;
+  margin-top: 20px;
+}
+
+.direccionHeader {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.direccionLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.direccionIcon {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.toggleTodosBtn {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border-primary);
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.separator {
+  width: 1px;
+  height: 100%;
+  background-color: var(--border-primary);
+}
+.toggleTodosBtn:hover {
+  color: var(--text-primary);
+}
+
+.serviciosGrid {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 19px;
+}
+
+.servicioBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.servicioBtn.permitido {
+  background: rgba(52, 211, 153, 0.1);
+  border-color: rgba(52, 211, 153, 0.3);
+  color: rgb(52, 211, 153);
+}
+
+.servicioBtn.permitido:hover {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.5);
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
+}
+
+.servicioBtn.bloqueado {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.3);
+  color: rgb(248, 113, 113);
+}
+
+.servicioBtn.bloqueado:hover {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.5);
+  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.2);
+}
+
+.servicioNombre {
+  font-size: 14px;
+  text-align: center;
+}
+
+.servicioEstado {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.logsSection {
+  margin-top: 48px;
+}
+
+.subtitle {
+  font-size: 16px;
+  font-weight: normal;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.resumenContent {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.textoVacio {
+  font-size: 13px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.5));
+  text-align: center;
+  padding: 8px;
+}
+
+.resumenGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resumenItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.resumenRed {
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  min-width: 80px;
+}
+
+.resumenDireccion {
+  font-size: 16px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+.resumenServicios {
+  flex: 1;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.resumenBtnLimpiar {
+  padding: 4px;
+  background: transparent;
+  border: none;
+  color: rgb(248, 113, 113);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resumenBtnLimpiar:hover {
+  background: rgba(248, 113, 113, 0.1);
+  color: rgb(252, 165, 165);
+}
+
+.logsContent {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.listaLogs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.logItem {
+  font-size: 12px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Scrollbar personalizada */
+.logsContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.logsContent::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.logsContent::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.logsContent::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
