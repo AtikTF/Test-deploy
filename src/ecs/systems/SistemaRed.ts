@@ -1,4 +1,4 @@
-import { ActivoComponent, RouterComponent, RedComponent, DispositivoComponent } from "../components";
+import { ActivoComponent, RouterComponent, DispositivoComponent } from "../components";
 import { Sistema, type Entidad } from "../core";
 import { TipoProtocolo } from "../../types/TrafficEnums";
 import type { DireccionTrafico } from "../../types/FirewallTypes";
@@ -49,7 +49,8 @@ export class SistemaRed extends Sistema {
         if (!this.firewallService) {
             this.firewallService = new FirewallService(
                 this.getConectividadService(),
-                this.getEventoService()
+                this.getEventoService(),
+                this.ecsManager
             );
         }
         return this.firewallService;
@@ -85,83 +86,114 @@ export class SistemaRed extends Sistema {
     }
 
     // Envía tráfico entre dos dispositivos validando conectividad y firewall
-     
+    // null = Internet (sin dispositivo físico)
     public enviarTrafico(
-        dispOrigen: string,
-        dispDestino: string,
+        entidadOrigen: Entidad | null,
+        entidadDestino: Entidad | null,
         protocolo: TipoProtocolo,
         payload: unknown
     ): boolean {
-        if (!this.getConectividadService().estanConectados(dispOrigen, dispDestino)) {
+        // Si origen o destino es Internet (null), manejar de forma especial
+        const nombreOrigen = entidadOrigen 
+            ? this.ecsManager.getComponentes(entidadOrigen)?.get(DispositivoComponent)?.nombre ?? "Desconocido"
+            : "Internet";
+        const nombreDestino = entidadDestino
+            ? this.ecsManager.getComponentes(entidadDestino)?.get(DispositivoComponent)?.nombre ?? "Desconocido"
+            : "Internet";
+
+        // Si ambos son Internet, no tiene sentido
+        if (!entidadOrigen && !entidadDestino) {
+            console.error("No se puede enviar tráfico entre Internet e Internet");
             return false;
         }
 
-        if (!this.getFirewallService().validarFirewall(dispOrigen, dispDestino, protocolo)) {
+        // Si al menos uno es Internet, verificar firewall del router
+        if (!entidadOrigen || !entidadDestino) {
+            if (!this.getFirewallService().validarFirewall(entidadOrigen, entidadDestino, protocolo)) {
+                return false;
+            }
+            
+            this.getEventoService().registrarTrafico(nombreOrigen, nombreDestino, protocolo);
+            return true;
+        }
+
+        const dispOrigen = this.ecsManager.getComponentes(entidadOrigen)?.get(DispositivoComponent);
+        const dispDestino = this.ecsManager.getComponentes(entidadDestino)?.get(DispositivoComponent);
+        
+        if (!dispOrigen || !dispDestino) {
+            return false;
+        }
+
+        if (!this.getConectividadService().estanConectados(entidadOrigen, entidadDestino)) {
+            return false;
+        }
+
+        if (!this.getFirewallService().validarFirewall(entidadOrigen, entidadDestino, protocolo)) {
             return false;
         }
 
         switch(protocolo){
             case TipoProtocolo.FTP: {
                 const activo = payload as string;
-                this.getTransferenciaService().enviarActivo(dispOrigen, dispDestino, activo);
+                this.getTransferenciaService().enviarActivo(entidadOrigen, entidadDestino, activo);
                 break;
             }
             // Próximamente para otros protocolos
         }
 
         // Tráfico exitoso
-        this.getEventoService().registrarTrafico(dispOrigen, dispDestino, protocolo);
+        this.getEventoService().registrarTrafico(dispOrigen.nombre, dispDestino.nombre, protocolo);
         
         return true;
     }
 
-    public toggleFirewall(nombreRouter: string, habilitado: boolean): void {
-        this.getFirewallConfigService().toggleFirewall(nombreRouter, habilitado);
+    public toggleFirewall(entidadRouter: Entidad, habilitado: boolean): void {
+        this.getFirewallConfigService().toggleFirewall(entidadRouter, habilitado);
     }
 
     public agregarReglaFirewall(
-        nombreRouter: string,
+        entidadRouter: Entidad,
         protocolo: TipoProtocolo,
         accion: "PERMITIR" | "DENEGAR",
         direccion: DireccionTrafico
     ): void {
-        this.getFirewallConfigService().agregarReglaFirewall(nombreRouter, protocolo, accion, direccion);
+        this.getFirewallConfigService().agregarReglaFirewall(entidadRouter, protocolo, accion, direccion);
     }
 
     public agregarExcepcionFirewall(
-        nombreRouter: string,
+        entidadRouter: Entidad,
         protocolo: TipoProtocolo,
-        nombreDispositivo: string,
+        entidadDispositivo: Entidad,
         accion: "PERMITIR" | "DENEGAR",
         direccion: DireccionTrafico
     ): void {
         this.getFirewallConfigService().agregarExcepcionFirewall(
-            nombreRouter,
+            entidadRouter,
             protocolo,
-            nombreDispositivo,
+            entidadDispositivo,
             accion,
             direccion
         );
     }
 
     public setPoliticaFirewall(
-        nombreRouter: string,
+        entidadRouter: Entidad,
         politica: "PERMITIR" | "DENEGAR"
     ): void {
-        this.getFirewallConfigService().setPoliticaFirewall(nombreRouter, politica);
+        this.getFirewallConfigService().setPoliticaFirewall(entidadRouter, politica);
     }
 
     public setPoliticaFirewallSaliente(
-        nombreRouter: string,
+        entidadRouter: Entidad,
         politica: "PERMITIR" | "DENEGAR"
     ): void {
-        this.getFirewallConfigService().setPoliticaFirewallSaliente(nombreRouter, politica);
+        this.getFirewallConfigService().setPoliticaFirewallSaliente(entidadRouter, politica);
     }
 
     public setPoliticaFirewallEntrante(
-        nombreRouter: string,
+        entidadRouter: Entidad,
         politica: "PERMITIR" | "DENEGAR"
     ): void {
-        this.getFirewallConfigService().setPoliticaFirewallEntrante(nombreRouter, politica);
+        this.getFirewallConfigService().setPoliticaFirewallEntrante(entidadRouter, politica);
     }
 }

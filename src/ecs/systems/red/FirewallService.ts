@@ -1,71 +1,96 @@
-import type { RouterComponent } from "../../components";
+import { RouterComponent, DispositivoComponent } from "../../components";
 import type { ConfiguracionFirewall, DireccionTrafico } from "../../../types/FirewallTypes";
 import type { TipoProtocolo } from "../../../types/TrafficEnums";
 import type { ConectividadService } from "./ConectividadService";
 import type { EventoRedService } from "./EventoRedService";
+import type { Entidad } from "../../core";
+import type { ECSManager } from "../../core/ECSManager";
 
-/**
- * Servicio responsable de validar y evaluar firewalls
- */
+
 export class FirewallService {
     constructor(
         private conectividadService: ConectividadService,
-        private eventoService: EventoRedService
+        private eventoService: EventoRedService,
+        private ecsManager: ECSManager
     ) {}
 
     // Valida si el tráfico pasa los firewalls de origen y destino
-     
+    // null = Internet (tráfico externo)
     validarFirewall(
-        nombreOrigen: string,
-        nombreDestino: string,
+        entidadOrigen: Entidad | null,
+        entidadDestino: Entidad | null,
         protocolo: TipoProtocolo
     ): boolean {
-        const routers = this.conectividadService.obtenerRoutersDeRed(nombreOrigen, nombreDestino);
+        // Si alguno es Internet (null), manejar tráfico externo
+        if (entidadOrigen === null || entidadDestino === null) {
+            return this.validarFirewallInternet(entidadOrigen, entidadDestino, protocolo);
+        }
+
+        const routers = this.conectividadService.obtenerRoutersDeRed(entidadOrigen, entidadDestino);
         
         // Si no hay routers con firewall, permitir tráfico
         if (routers.length === 0) {
             return true;
         }
 
-        // Obtener routers únicos del origen y destino (puede haber overlap)
-        const routerOrigen = this.conectividadService.obtenerRouterDelDispositivo(nombreOrigen);
-        const routerDestino = this.conectividadService.obtenerRouterDelDispositivo(nombreDestino);
+        // Obtener información completa de routers (componente + zona)
+        const infoRouterOrigen = this.conectividadService.buscarRouterConDispositivo(entidadOrigen);
+        const infoRouterDestino = this.conectividadService.buscarRouterConDispositivo(entidadDestino);
+
+        // Obtener nombres de dispositivos para eventos
+        const dispOrigen = this.ecsManager.getComponentes(entidadOrigen)?.get(DispositivoComponent);
+        const dispDestino = this.ecsManager.getComponentes(entidadDestino)?.get(DispositivoComponent);
+        const nombreOrigen = dispOrigen?.nombre || 'origen';
+        const nombreDestino = dispDestino?.nombre || 'destino';
 
         // Caso 1: Ambos dispositivos en el mismo router
-        if (routerOrigen && routerDestino && routerOrigen === routerDestino) {
-            return this.evaluarFirewallDeRouter(routerOrigen, nombreOrigen, nombreDestino, protocolo);
+        if (infoRouterOrigen && infoRouterDestino && infoRouterOrigen.zonaId === infoRouterDestino.zonaId) {
+            // Encontrar la entidad del router
+            const entidadRouter = this.encontrarEntidadRouter(infoRouterOrigen.router);
+            if (entidadRouter) {
+                return this.evaluarFirewallDeRouter(entidadRouter, infoRouterOrigen.router, entidadOrigen, entidadDestino, protocolo);
+            }
+            return true;
         }
 
         // Caso 2: Dispositivos en routers diferentes (tráfico pasa por ambos)
         let permitido = true;
 
         // Evaluar firewall del router de ORIGEN (SALIENTE)
-        if (routerOrigen) {
-            const permitidoSaliente = this.evaluarFirewallDeRouter(
-                routerOrigen, 
-                nombreOrigen, 
-                nombreDestino, 
-                protocolo
-            );
-            
-            if (!permitidoSaliente) {
-                this.eventoService.emitirEventoBloqueado(nombreOrigen, nombreDestino, protocolo, 'Router origen');
-                return false;
+        if (infoRouterOrigen) {
+            const entidadRouterOrigen = this.encontrarEntidadRouter(infoRouterOrigen.router);
+            if (entidadRouterOrigen) {
+                const permitidoSaliente = this.evaluarFirewallDeRouter(
+                    entidadRouterOrigen,
+                    infoRouterOrigen.router, 
+                    entidadOrigen, 
+                    entidadDestino, 
+                    protocolo
+                );
+                
+                if (!permitidoSaliente) {
+                    this.eventoService.emitirEventoBloqueado(nombreOrigen, nombreDestino, protocolo, 'Router origen');
+                    return false;
+                }
             }
         }
 
         // Evaluar firewall del router de DESTINO (ENTRANTE)
-        if (routerDestino && routerOrigen !== routerDestino) {
-            const permitidoEntrante = this.evaluarFirewallDeRouter(
-                routerDestino, 
-                nombreOrigen, 
-                nombreDestino, 
-                protocolo
-            );
-            
-            if (!permitidoEntrante) {
-                this.eventoService.emitirEventoBloqueado(nombreOrigen, nombreDestino, protocolo, 'Router destino');
-                return false;
+        if (infoRouterDestino && (!infoRouterOrigen || infoRouterOrigen.zonaId !== infoRouterDestino.zonaId)) {
+            const entidadRouterDestino = this.encontrarEntidadRouter(infoRouterDestino.router);
+            if (entidadRouterDestino) {
+                const permitidoEntrante = this.evaluarFirewallDeRouter(
+                    entidadRouterDestino,
+                    infoRouterDestino.router, 
+                    entidadOrigen, 
+                    entidadDestino, 
+                    protocolo
+                );
+                
+                if (!permitidoEntrante) {
+                    this.eventoService.emitirEventoBloqueado(nombreOrigen, nombreDestino, protocolo, 'Router destino');
+                    return false;
+                }
             }
         }
 
@@ -77,72 +102,74 @@ export class FirewallService {
         return permitido;
     }
 
-    // Evalúa el firewall de un router específico
+    private encontrarEntidadRouter(routerComponent: RouterComponent): Entidad | null {
+        for (const [entidad, container] of this.ecsManager.getEntidades()) {
+            const router = container.get(RouterComponent);
+            if (router === routerComponent) {
+                return entidad;
+            }
+        }
+        return null;
+    }
+
     evaluarFirewallDeRouter(
+        entidadRouter: Entidad,
         router: RouterComponent,
-        nombreOrigen: string,
-        nombreDestino: string,
+        entidadOrigen: Entidad,
+        entidadDestino: Entidad,
         protocolo: TipoProtocolo
     ): boolean {
-        // Obtener las redes del router resolviendo las entidades
-        const redes = this.conectividadService.obtenerRedesDelRouter(router);
+        const redesOrigen = this.conectividadService['obtenerRedesDelDispositivo'](entidadOrigen);
+        const redesDestino = this.conectividadService['obtenerRedesDelDispositivo'](entidadDestino);
         
-        // Sin redes configuradas, permitir tráfico
-        if (redes.length === 0) {
+        const redesRouter = this.conectividadService['obtenerRedesDelDispositivo'](entidadRouter);
+        
+        if (redesOrigen.length === 0 && redesDestino.length === 0) {
             return true;
         }
 
-        // Buscar en qué redes están el origen y destino
-        let origenEnRedInterna = false;
-        let destinoEnRedInterna = false;
-        let mismaRed = false;
-
-        for (const red of redes) {
-            const origenEnEstaRed = red.dispositivosConectados.includes(nombreOrigen);
-            const destinoEnEstaRed = red.dispositivosConectados.includes(nombreDestino);
-            
-            if (origenEnEstaRed) origenEnRedInterna = true;
-            if (destinoEnEstaRed) destinoEnRedInterna = true;
-            
-            // Si ambos están en la MISMA red, es tráfico local
-            if (origenEnEstaRed && destinoEnEstaRed) {
-                mismaRed = true;
-                break;
-            }
-        }
-
-        // Si AMBOS están en la misma red interna → Tráfico LOCAL, no aplica firewall
+        const mismaRed = redesOrigen.some(redOrigen => redesDestino.includes(redOrigen));
+        
         if (mismaRed) {
-            return true; // Permitir siempre tráfico interno en la misma red
-        }
-        if (!origenEnRedInterna && !destinoEnRedInterna) {
             return true; 
         }
 
-        // Determinar dirección del tráfico (origen en red → SALIENTE, destino en red → ENTRANTE)
-        const direccion = origenEnRedInterna ? 'SALIENTE' : 'ENTRANTE';
+
+        const origenEnEsteRouter = redesOrigen.some(red => redesRouter.includes(red));
+        const destinoEnEsteRouter = redesDestino.some(red => redesRouter.includes(red));
+        
+        let direccion: DireccionTrafico;
+        if (origenEnEsteRouter && !destinoEnEsteRouter) {
+            direccion = 'SALIENTE'; 
+        } else if (!origenEnEsteRouter && destinoEnEsteRouter) {
+            direccion = 'ENTRANTE'; 
+        } else if (origenEnEsteRouter && destinoEnEsteRouter) {
+           
+            direccion = 'SALIENTE'; // Por defecto
+        } else {
+            return true;
+        }
+        const dispOrigen = this.ecsManager.getComponentes(entidadOrigen)?.get(DispositivoComponent);
+        const nombreDispositivo = dispOrigen?.nombre || 'dispositivo';
 
         return this.evaluarReglaFirewall(
             router.firewall, 
             protocolo, 
-            nombreOrigen,
+            nombreDispositivo,
             direccion
         );
     }
 
-    // Evalúa las reglas del firewall según protocolo, dispositivo y dirección
     evaluarReglaFirewall(
         firewall: ConfiguracionFirewall,
         protocolo: TipoProtocolo,
         nombreDispositivo: string,
         direccion: DireccionTrafico
     ): boolean {
-        // Si el firewall está deshabilitado, permitir todo
         if (!firewall.habilitado) {
             return true;
         }
 
-        // 1. Verificar si hay excepción específica para este dispositivo (máxima prioridad)
         const excepciones = firewall.excepciones.get(protocolo);
         if (excepciones) {
             const excepcion = excepciones.find(r => 
@@ -154,10 +181,8 @@ export class FirewallService {
             }
         }
 
-        // 2. Aplicar reglas globales del protocolo con dirección
         const reglasGlobales = firewall.reglasGlobales.get(protocolo);
         if (reglasGlobales && reglasGlobales.length > 0) {
-            // Buscar regla que coincida con la dirección del tráfico
             const reglaAplicable = reglasGlobales.find(regla => 
                 this.coincideDireccion(regla.direccion, direccion)
             );
@@ -167,11 +192,9 @@ export class FirewallService {
             }
         }
 
-        // 3. Aplicar política por defecto según dirección (menor prioridad)
         return this.aplicarPoliticaPorDefecto(firewall, direccion);
     }
 
-    // Verifica si la dirección de la regla coincide con la del tráfico
     private coincideDireccion(
         direccionRegla: DireccionTrafico,
         direccionTrafico: DireccionTrafico
@@ -195,5 +218,48 @@ export class FirewallService {
         
         // Política general por defecto
         return firewall.politicaPorDefecto === 'PERMITIR';
+    }
+
+
+    private validarFirewallInternet(
+        entidadOrigen: Entidad | null,
+        entidadDestino: Entidad | null,
+        protocolo: TipoProtocolo
+    ): boolean {
+
+        const entidadInterna = entidadOrigen ?? entidadDestino;
+        const esTraficoSaliente = entidadOrigen !== null; 
+        
+        if (!entidadInterna) {
+            return false; 
+        }
+
+        const infoRouter = this.conectividadService.buscarRouterConDispositivo(entidadInterna);
+        if (!infoRouter) {
+            return true;
+        }
+
+
+        const dispInterno = this.ecsManager.getComponentes(entidadInterna)?.get(DispositivoComponent);
+        const nombreInterno = dispInterno?.nombre || 'dispositivo';
+        const nombreOrigen = esTraficoSaliente ? nombreInterno : 'Internet';
+        const nombreDestino = esTraficoSaliente ? 'Internet' : nombreInterno;
+        const direccion: DireccionTrafico = esTraficoSaliente ? 'SALIENTE' : 'ENTRANTE';
+
+        const permitido = this.evaluarReglaFirewall(
+            infoRouter.router.firewall,
+            protocolo,
+            nombreInterno,
+            direccion
+        );
+
+
+        if (permitido) {
+            this.eventoService.emitirEventoPermitido(nombreOrigen, nombreDestino, protocolo);
+        } else {
+            this.eventoService.emitirEventoBloqueado(nombreOrigen, nombreDestino, protocolo, 'Bloqueado por firewall');
+        }
+
+        return permitido;
     }
 }

@@ -21,11 +21,15 @@ export enum EventosAtaque {
 export enum EventosRed {
     RED_ENVIAR_ACTIVO = "red:enviarActivo",
     RED_ACTIVO_ENVIADO = "red:activoEnviado",
+    RED_TRAFICO = "red:trafico",
     TRAFICO_ENVIADO = "trafico:enviado",
-    FIREWALL_TRAFICO_PERMITIDO = "firewall:traficoPermitido",
-    FIREWALL_TRAFICO_BLOQUEADO = "firewall:traficoBloqueado",
-    FIREWALL_HABILITADO = "firewall:habilitado",
-    FIREWALL_DESHABILITADO = "firewall:deshabilitado",
-    FIREWALL_REGLA_AGREGADA = "firewall:reglaAgregada",
-    FIREWALL_POLITICA_CAMBIADA = "firewall:politicaCambiada",
+};
+
+export enum EventosFirewall {
+    TRAFICO_PERMITIDO = "firewall:traficoPermitido",
+    TRAFICO_BLOQUEADO = "firewall:traficoBloqueado",
+    HABILITADO = "firewall:habilitado",
+    DESHABILITADO = "firewall:deshabilitado",
+    REGLA_AGREGADA = "firewall:reglaAgregada",
+    POLITICA_CAMBIADA = "firewall:politicaCambiada",
 };

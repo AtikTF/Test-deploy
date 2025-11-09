@@ -1,6 +1,6 @@
 import { ObjetosManejables } from "../../types/AccionesEnums";
 import { EstadoAtaqueDispositivo, TipoEvento } from "../../types/DeviceEnums";
-import { EventosAtaque, EventosRed } from "../../types/EventosEnums";
+import { EventosAtaque, EventosRed, EventosFirewall } from "../../types/EventosEnums";
 import { AtaqueComponent, DispositivoComponent, EventoComponent, WorkstationComponent } from "../components";
 import { Sistema, type Entidad } from "../core";
 import type { ClaseComponente } from "../core/Componente";
@@ -62,11 +62,56 @@ export class SistemaEvento extends Sistema {
   public ejecutarEvento(evento: EventoComponent): void {
     switch(evento.tipoEvento){
       case TipoEvento.ENVIO_ACTIVO: {
-        this.ecsManager.emit(EventosRed.RED_ENVIAR_ACTIVO, { evento });
+        console.log("Ejecutando evento de envío de activo...");
+        // Convertir nombres de dispositivos a entidades (null = Internet)
+        const info = evento.infoAdicional as { dispositivoEmisor: string, dispositivoReceptor: string, nombreActivo: string };
+        const entidadEmisor = this.buscarDispositivoPorNombre(info.dispositivoEmisor);
+        const entidadReceptor = this.buscarDispositivoPorNombre(info.dispositivoReceptor);
+        
+        const eventoConEntidades = {
+          ...evento,
+          infoAdicional: {
+            entidadEmisor,
+            entidadReceptor,
+            nombreActivo: info.nombreActivo
+          }
+        };
+        
+        this.ecsManager.emit(EventosRed.RED_ENVIAR_ACTIVO, { evento: eventoConEntidades });
+        break;
+      }
+      case TipoEvento.TRAFICO_RED: {
+        console.log("Ejecutando evento de tráfico de red...");
+        // Convertir nombres de dispositivos a entidades (null = Internet)
+        const info = evento.infoAdicional as { dispositivoOrigen: string, dispositivoDestino: string, protocolo: unknown };
+        const entidadOrigen = this.buscarDispositivoPorNombre(info.dispositivoOrigen);
+        const entidadDestino = this.buscarDispositivoPorNombre(info.dispositivoDestino);
+        
+        const eventoConEntidades = {
+          ...evento,
+          infoAdicional: {
+            entidadOrigen,
+            entidadDestino,
+            protocolo: info.protocolo
+          }
+        };
+        
+        this.ecsManager.emit(EventosRed.RED_TRAFICO, { evento: eventoConEntidades });
         break;
       }
         // Próximamente para futuros eventos
     }
+  }
+
+  // Método helper para buscar un dispositivo por nombre
+  private buscarDispositivoPorNombre(nombre: string): Entidad | null {
+    for (const [entidad, container] of this.ecsManager.getEntidades()) {
+      const dispositivo = container.get(DispositivoComponent);
+      if (dispositivo && dispositivo.nombre === nombre) {
+        return entidad;
+      }
+    }
+    return null;
   }
 
 }

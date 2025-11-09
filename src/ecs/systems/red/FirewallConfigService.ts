@@ -1,20 +1,21 @@
 import type { ECSManager } from "../../core/ECSManager";
+import type { Entidad } from "../../core";
 import { DispositivoComponent, RouterComponent } from "../../components";
-import { EventosRed } from "../../../types/EventosEnums";
+import { EventosRed, EventosFirewall } from "../../../types/EventosEnums";
 import type { TipoProtocolo } from "../../../types/TrafficEnums";
 import type { DireccionTrafico } from "../../../types/FirewallTypes";
 
-// Servicio responsable de configurar firewalls de routers
- 
+
 export class FirewallConfigService {
     constructor(private ecsManager: ECSManager) {}
 
-    // Habilita o deshabilita el firewall de un router
-     
-    toggleFirewall(nombreRouter: string, habilitado: boolean): void {
-        const router = this.obtenerRouterPorNombre(nombreRouter);
-        if (!router) {
-            console.error(`Router "${nombreRouter}" no encontrado`);
+
+    toggleFirewall(entidadRouter: Entidad, habilitado: boolean): void {
+        const router = this.ecsManager.getComponentes(entidadRouter)?.get(RouterComponent);
+        const dispositivo = this.ecsManager.getComponentes(entidadRouter)?.get(DispositivoComponent);
+        
+        if (!router || !dispositivo) {
+            console.error(`Router con entidad "${entidadRouter}" no encontrado`);
             return;
         }
 
@@ -26,38 +27,40 @@ export class FirewallConfigService {
         };
 
         // Emitir evento de cambio de estado
-        const evento = habilitado ? EventosRed.FIREWALL_HABILITADO : EventosRed.FIREWALL_DESHABILITADO;
+        const evento = habilitado ? EventosFirewall.HABILITADO : EventosFirewall.DESHABILITADO;
         this.ecsManager.emit(evento, {
-            router: nombreRouter,
-            mensaje: `Firewall del router "${nombreRouter}" ${habilitado ? 'habilitado' : 'deshabilitado'}`,
+            router: dispositivo.nombre,
+            mensaje: `Firewall del router "${dispositivo.nombre}" ${habilitado ? 'habilitado' : 'deshabilitado'}`,
             tipo: habilitado ? 'HABILITADO' : 'DESHABILITADO'
         });
     }
 
-    // Agrega una regla para un protocolo específico (sobrescribe la política por defecto para ese protocolo)
+   
     agregarReglaFirewall(
-        nombreRouter: string,
+        entidadRouter: Entidad,
         protocolo: TipoProtocolo,
         accion: "PERMITIR" | "DENEGAR",
         direccion: DireccionTrafico
     ): void {
-        const router = this.obtenerRouterPorNombre(nombreRouter);
-        if (!router) {
-            console.error(`Router "${nombreRouter}" no encontrado`);
+        const router = this.ecsManager.getComponentes(entidadRouter)?.get(RouterComponent);
+        const dispositivo = this.ecsManager.getComponentes(entidadRouter)?.get(DispositivoComponent);
+        
+        if (!router || !dispositivo) {
+            console.error(`Router con entidad "${entidadRouter}" no encontrado`);
             return;
         }
 
-        // Obtener reglas existentes para este protocolo
+
         const reglasExistentes = router.firewall.reglasGlobales.get(protocolo) || [];
         
-        // Agregar la nueva regla
+
         const nuevaRegla = { accion, direccion };
         router.firewall.reglasGlobales.set(protocolo, [...reglasExistentes, nuevaRegla]);
 
-        // Emitir evento
-        this.ecsManager.emit(EventosRed.FIREWALL_REGLA_AGREGADA, {
-            router: nombreRouter,
-            mensaje: `Regla agregada en "${nombreRouter}": ${accion} ${protocolo} (${direccion})`,
+
+        this.ecsManager.emit(EventosFirewall.REGLA_AGREGADA, {
+            router: dispositivo.nombre,
+            mensaje: `Regla agregada en "${dispositivo.nombre}": ${accion} ${protocolo} (${direccion})`,
             tipo: 'REGLA_AGREGADA',
             protocolo,
             accion,
@@ -65,35 +68,38 @@ export class FirewallConfigService {
         });
     }
 
-    // Agrega una excepción para un dispositivo específico (sobrescribe reglas y política)
+
     agregarExcepcionFirewall(
-        nombreRouter: string,
+        entidadRouter: Entidad,
         protocolo: TipoProtocolo,
-        nombreDispositivo: string,
+        entidadDispositivo: Entidad,
         accion: "PERMITIR" | "DENEGAR",
         direccion: DireccionTrafico
     ): void {
-        const router = this.obtenerRouterPorNombre(nombreRouter);
-        if (!router) {
-            console.error(`Router "${nombreRouter}" no encontrado`);
+        const router = this.ecsManager.getComponentes(entidadRouter)?.get(RouterComponent);
+        const dispositivoRouter = this.ecsManager.getComponentes(entidadRouter)?.get(DispositivoComponent);
+        const dispositivoExcepcion = this.ecsManager.getComponentes(entidadDispositivo)?.get(DispositivoComponent);
+        
+        if (!router || !dispositivoRouter || !dispositivoExcepcion) {
+            console.error(`Router o dispositivo no encontrado`);
             return;
         }
 
-        // Obtener excepciones existentes para este protocolo
+
         const excepcionesExistentes = router.firewall.excepciones.get(protocolo) || [];
         
-        // Agregar la nueva excepción
+
         const nuevaExcepcion = {
-            nombreDispositivo,
+            nombreDispositivo: dispositivoExcepcion.nombre,
             accion,
             direccion
         };
         router.firewall.excepciones.set(protocolo, [...excepcionesExistentes, nuevaExcepcion]);
 
-        // Emitir evento
-        this.ecsManager.emit(EventosRed.FIREWALL_REGLA_AGREGADA, {
-            router: nombreRouter,
-            mensaje: `Excepción agregada en "${nombreRouter}": ${accion} ${protocolo} para "${nombreDispositivo}" (${direccion})`,
+
+        this.ecsManager.emit(EventosFirewall.REGLA_AGREGADA, {
+            router: dispositivoRouter.nombre,
+            mensaje: `Excepción agregada en "${dispositivoRouter.nombre}": ${accion} ${protocolo} para "${dispositivoExcepcion.nombre}" (${direccion})`,
             tipo: 'REGLA_AGREGADA',
             protocolo,
             accion,
@@ -101,14 +107,16 @@ export class FirewallConfigService {
         });
     }
 
-    // Cambia la política por defecto (aplica PERMITIR/DENEGAR a TODOS los protocolos que no tengan regla específica)
+    
     setPoliticaFirewall(
-        nombreRouter: string,
+        entidadRouter: Entidad,
         politica: "PERMITIR" | "DENEGAR"
     ): void {
-        const router = this.obtenerRouterPorNombre(nombreRouter);
-        if (!router) {
-            console.error(`Router "${nombreRouter}" no encontrado`);
+        const router = this.ecsManager.getComponentes(entidadRouter)?.get(RouterComponent);
+        const dispositivo = this.ecsManager.getComponentes(entidadRouter)?.get(DispositivoComponent);
+        
+        if (!router || !dispositivo) {
+            console.error(`Router con entidad "${entidadRouter}" no encontrado`);
             return;
         }
 
@@ -116,23 +124,25 @@ export class FirewallConfigService {
         router.firewall.politicaPorDefecto = politica;
 
         // Emitir evento
-        this.ecsManager.emit(EventosRed.FIREWALL_POLITICA_CAMBIADA, {
-            router: nombreRouter,
-            mensaje: `Política general de "${nombreRouter}" cambiada de ${politicaAnterior} a ${politica}`,
+        this.ecsManager.emit(EventosFirewall.POLITICA_CAMBIADA, {
+            router: dispositivo.nombre,
+            mensaje: `Política general de "${dispositivo.nombre}" cambiada de ${politicaAnterior} a ${politica}`,
             tipo: 'POLITICA_CAMBIADA',
             politicaAnterior,
             politicaNueva: politica
         });
     }
 
-    // Cambia la política por defecto para tráfico SALIENTE (aplica a todos los protocolos salientes sin regla específica)
+    
     setPoliticaFirewallSaliente(
-        nombreRouter: string,
+        entidadRouter: Entidad,
         politica: "PERMITIR" | "DENEGAR"
     ): void {
-        const router = this.obtenerRouterPorNombre(nombreRouter);
-        if (!router) {
-            console.error(`Router "${nombreRouter}" no encontrado`);
+        const router = this.ecsManager.getComponentes(entidadRouter)?.get(RouterComponent);
+        const dispositivo = this.ecsManager.getComponentes(entidadRouter)?.get(DispositivoComponent);
+        
+        if (!router || !dispositivo) {
+            console.error(`Router con entidad "${entidadRouter}" no encontrado`);
             return;
         }
 
@@ -140,50 +150,38 @@ export class FirewallConfigService {
         router.firewall.politicaPorDefectoSaliente = politica;
 
         // Emitir evento
-        this.ecsManager.emit(EventosRed.FIREWALL_POLITICA_CAMBIADA, {
-            router: nombreRouter,
-            mensaje: `Política SALIENTE de "${nombreRouter}" cambiada de ${politicaAnterior} a ${politica}`,
+        this.ecsManager.emit(EventosFirewall.POLITICA_CAMBIADA, {
+            router: dispositivo.nombre,
+            mensaje: `Política SALIENTE de "${dispositivo.nombre}" cambiada de ${politicaAnterior} a ${politica}`,
             tipo: 'POLITICA_CAMBIADA',
             politicaAnterior,
             politicaNueva: politica
         });
     }
 
-    // Cambia la política por defecto para tráfico ENTRANTE (aplica a todos los protocolos entrantes sin regla específica)
+    
     setPoliticaFirewallEntrante(
-        nombreRouter: string,
+        entidadRouter: Entidad,
         politica: "PERMITIR" | "DENEGAR"
     ): void {
-        const router = this.obtenerRouterPorNombre(nombreRouter);
-        if (!router) {
-            console.error(`Router "${nombreRouter}" no encontrado`);
+        const router = this.ecsManager.getComponentes(entidadRouter)?.get(RouterComponent);
+        const dispositivo = this.ecsManager.getComponentes(entidadRouter)?.get(DispositivoComponent);
+        
+        if (!router || !dispositivo) {
+            console.error(`Router con entidad "${entidadRouter}" no encontrado`);
             return;
         }
 
         const politicaAnterior = router.firewall.politicaPorDefectoEntrante || router.firewall.politicaPorDefecto;
         router.firewall.politicaPorDefectoEntrante = politica;
 
-        // Emitir evento
-        this.ecsManager.emit(EventosRed.FIREWALL_POLITICA_CAMBIADA, {
-            router: nombreRouter,
-            mensaje: `Política ENTRANTE de "${nombreRouter}" cambiada de ${politicaAnterior} a ${politica}`,
+
+        this.ecsManager.emit(EventosFirewall.POLITICA_CAMBIADA, {
+            router: dispositivo.nombre,
+            mensaje: `Política ENTRANTE de "${dispositivo.nombre}" cambiada de ${politicaAnterior} a ${politica}`,
             tipo: 'POLITICA_CAMBIADA',
             politicaAnterior,
             politicaNueva: politica
         });
-    }
-
-    // Busca un router por nombre (nombre del DispositivoComponent)
-    private obtenerRouterPorNombre(nombreRouter: string): RouterComponent | null {
-        for (const [, container] of this.ecsManager.getEntidades()) {
-            const router = container.get(RouterComponent);
-            const dispositivo = container.get(DispositivoComponent);
-            
-            if (router && dispositivo && dispositivo.nombre === nombreRouter) {
-                return router;
-            }
-        }
-
-        return null;
     }
 }

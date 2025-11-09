@@ -7,6 +7,7 @@ import {
   TipoDispositivo,
   TipoEvento,
 } from "../../types/DeviceEnums";
+import { TipoProtocolo } from "../../types/TrafficEnums";
 export const escenarioBase: unknown = {
   id: 2,
   titulo: "Infraestructura Corporativa Completa",
@@ -36,6 +37,18 @@ export const escenarioBase: unknown = {
   ],
   eventos: [
     {
+      nombreEvento: "Prueba de tráfico SSH",
+      tipoEvento: TipoEvento.TRAFICO_RED,
+      tiempoNotificacion: 15,
+      descripcion: "Se probará conexión SSH entre computadoras.",
+      fase: 1,
+      infoAdicional: {
+        dispositivoOrigen: "Internet",
+        dispositivoDestino: "Computadora Jacob",
+        protocolo: TipoProtocolo.SSH,
+      },
+    },
+    {
       nombreEvento: "Envío de archivo/activo",
       tipoEvento: TipoEvento.ENVIO_ACTIVO,
       tiempoNotificacion: 25,
@@ -47,6 +60,7 @@ export const escenarioBase: unknown = {
         dispositivoReceptor: "Computadora Jacob",
       },
     },
+    
   ],
   fases: [
     {

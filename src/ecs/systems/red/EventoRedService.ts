@@ -1,5 +1,5 @@
 import type { ECSManager } from "../../core/ECSManager";
-import { EventosRed } from "../../../types/EventosEnums";
+import { EventosRed, EventosFirewall } from "../../../types/EventosEnums";
 import type { TipoProtocolo, RegistroTrafico, RegistroFirewallBloqueado, RegistroFirewallPermitido } from "../../../types/TrafficEnums";
 
 /**
@@ -9,37 +9,30 @@ export class EventoRedService {
     constructor(private ecsManager: ECSManager) {}
 
     // Emite evento cuando el tráfico es permitido por el firewall
-     
     emitirEventoPermitido(origen: string, destino: string, protocolo: TipoProtocolo): void {
-        const mensaje = `Conexión permitida: ${origen} → ${destino} [${protocolo}]`;
-        
         const registro: RegistroFirewallPermitido = {
             origen,
             destino,
             protocolo,
-            mensaje,
+            mensaje: `Conexión permitida: ${origen} → ${destino} [${protocolo}]`,
             tipo: 'PERMITIDO'
         };
         
-        this.ecsManager.emit(EventosRed.FIREWALL_TRAFICO_PERMITIDO, registro);
+        this.ecsManager.emit(EventosFirewall.TRAFICO_PERMITIDO, registro);
     }
 
     // Emite evento cuando el tráfico es bloqueado por el firewall
     emitirEventoBloqueado(origen: string, destino: string, protocolo: TipoProtocolo, razon?: string): void {
-        const razonTexto = razon ? ` - Bloqueado por: ${razon}` : '';
-        const mensaje = `Conexión bloqueado: ${origen} → ${destino} [${protocolo}]${razonTexto}`;
-        
         const registro: RegistroFirewallBloqueado = {
             origen,
             destino,
             protocolo,
-            mensaje,
+            mensaje: `Conexión bloqueada: ${origen} → ${destino} [${protocolo}]${razon ? ` - Razón: ${razon}` : ''}`,
             tipo: 'BLOQUEADO',
             razon
         };
         
-        this.ecsManager.emit(EventosRed.FIREWALL_TRAFICO_BLOQUEADO, registro);
-        
+        this.ecsManager.emit(EventosFirewall.TRAFICO_BLOQUEADO, registro);
     }
 
     // Registra tráfico exitoso

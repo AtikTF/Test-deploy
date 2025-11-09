@@ -1,9 +1,9 @@
 import type { ECSManager } from "../../core/ECSManager";
+import type { Entidad } from "../../core";
 import { ActivoComponent, DispositivoComponent } from "../../components";
 import type { EventoRedService } from "./EventoRedService";
 
 // Servicio responsable de transferir activos entre dispositivos
- 
 export class TransferenciaService {
     constructor(
         private ecsManager: ECSManager,
@@ -11,17 +11,19 @@ export class TransferenciaService {
     ) {}
 
     // Transfiere un activo de un dispositivo a otro (protocolo FTP)
-    enviarActivo(dispEnvio: string, dispReceptor: string, activo: string): void {
+    enviarActivo(entidadEnvio: Entidad, entidadReceptor: Entidad, activo: string): void {
         // Obtener componentes de activos de ambos dispositivos
-        const activosReceptor = this.obtenerActivosDispositivo(dispReceptor);
-        const activosEmisor = this.obtenerActivosDispositivo(dispEnvio);
+        const activosReceptor = this.ecsManager.getComponentes(entidadReceptor)?.get(ActivoComponent);
+        const activosEmisor = this.ecsManager.getComponentes(entidadEnvio)?.get(ActivoComponent);
+        const dispReceptor = this.ecsManager.getComponentes(entidadReceptor)?.get(DispositivoComponent);
+        const dispEmisor = this.ecsManager.getComponentes(entidadEnvio)?.get(DispositivoComponent);
 
-        if (!activosReceptor) {
+        if (!activosReceptor || !dispReceptor) {
             console.warn("El dispositivo receptor no tiene componente de activos");
             return;
         }
 
-        if (!activosEmisor) {
+        if (!activosEmisor || !dispEmisor) {
             console.warn("El dispositivo emisor no tiene componente de activos");
             return;
         }
@@ -43,17 +45,6 @@ export class TransferenciaService {
         // Transferir activo
         activosReceptor.activos.push(activoAenviar);
 
-        this.eventoService.emitirActivoEnviado(activo, dispEnvio, dispReceptor);
-    }
-
-    // Obtiene el componente ActivoComponent de un dispositivo por nombre
-    private obtenerActivosDispositivo(nombreDispositivo: string): ActivoComponent | null {
-        for (const [, container] of this.ecsManager.getEntidades()) {
-            const dispositivo = container.get(DispositivoComponent);
-            if (dispositivo?.nombre === nombreDispositivo) {
-                return container.get(ActivoComponent) || null;
-            }
-        }
-        return null;
+        this.eventoService.emitirActivoEnviado(activo, dispEmisor.nombre, dispReceptor.nombre);
     }
 }

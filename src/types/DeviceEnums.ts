@@ -25,4 +25,5 @@ export enum TipoAtaque {
 
 export enum TipoEvento {
   ENVIO_ACTIVO = "Envío de activo",
+  TRAFICO_RED = "Tráfico de red",
 }
