@@ -131,7 +131,7 @@ export class SistemaRed extends Sistema {
       ?.get(DispositivoComponent);
 
     if (!dispOrigen || !dispDestino) {
-      console.log(`❌ SistemaRed.enviarTrafico: Dispositivos no encontrados`);
+      console.error(`❌ SistemaRed.enviarTrafico: Dispositivos no encontrados`);
       return false;
     }
 

@@ -1,11 +1,6 @@
-import { EventosRed, EventosFirewall } from "../../types/EventosEnums";
+import { EventosRed } from "../../types/EventosEnums";
 import type { DireccionTrafico } from "../../types/FirewallTypes";
 import { TipoProtocolo } from "../../types/TrafficEnums";
-import type {
-  RegistroFirewallPermitido,
-  RegistroFirewallBloqueado,
-  RegistroTrafico,
-} from "../../types/TrafficEnums";
 import type { ECSManager } from "../core";
 import type { Entidad } from "../core/Componente";
 import { SistemaRed } from "../systems";
@@ -43,12 +38,31 @@ export class RedController {
     }
 
     this.ecsManager.on(EventosRed.RED_ENVIAR_ACTIVO, (data: unknown) => {
+<<<<<<< HEAD
       const d = data as { evento: unknown };
      const resultado =  this.sistemaRed?.enviarTrafico(d.evento.infoAdicional.dispositivoEmisor,
                                     d.evento.infoAdicional.dispositivoReceptor,
                                     TipoProtocolo.FTP,
                                     d.evento.infoAdicional.nombreActivo);
       console.log("Activo enviado desde el controlador de red", resultado);
+=======
+      const d = data as { eventoConEntidades: {
+        entidadEmisor: number,
+        entidadReceptor: number,
+        nombreActivo: unknown
+      }};
+      this.sistemaRed?.enviarTrafico(
+        d.eventoConEntidades.entidadEmisor,
+        d.eventoConEntidades.entidadReceptor,
+        TipoProtocolo.FTP,
+        d.eventoConEntidades.nombreActivo
+      );
+>>>>>>> 24ea409 (Fix: Arreglo de envío de activos)
+    });
+
+    this.ecsManager.on(EventosRed.RED_ACTIVO_ENVIADO, (data: unknown) => {
+      const d = data as {nombreActivo: string, d1: string, d2: string};
+      console.log(`Se envió un activo: ${d.nombreActivo}. Desde ${d.d1} hacia ${d.d2}.`);
     });
 
     this.ecsManager.on(EventosRed.RED_TRAFICO, (data: unknown) => {

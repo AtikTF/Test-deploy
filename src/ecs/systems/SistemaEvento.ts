@@ -64,7 +64,7 @@ export class SistemaEvento extends Sistema {
       case TipoEvento.ENVIO_ACTIVO: {
         console.log("Ejecutando evento de envío de activo...");
         // Convertir nombres de dispositivos a entidades
-        const info = evento.infoAdicional as { dispositivoEmisor: string, dispositivoReceptor: string, nombreActivo: string };
+        const info = evento.infoAdicional as { nombreActivo: string, dispositivoEmisor: string, dispositivoReceptor: string };
         const entidadEmisor = this.buscarDispositivoPorNombre(info.dispositivoEmisor);
         const entidadReceptor = this.buscarDispositivoPorNombre(info.dispositivoReceptor);
         
@@ -74,15 +74,12 @@ export class SistemaEvento extends Sistema {
         }
         
         const eventoConEntidades = {
-          ...evento,
-          infoAdicional: {
-            entidadEmisor,
-            entidadReceptor,
-            nombreActivo: info.nombreActivo
-          }
+          entidadEmisor,
+          entidadReceptor,
+          nombreActivo: info.nombreActivo
         };
         
-        this.ecsManager.emit(EventosRed.RED_ENVIAR_ACTIVO, { evento: eventoConEntidades });
+        this.ecsManager.emit(EventosRed.RED_ENVIAR_ACTIVO, { eventoConEntidades });
         break;
       }
       case TipoEvento.TRAFICO_RED: {
