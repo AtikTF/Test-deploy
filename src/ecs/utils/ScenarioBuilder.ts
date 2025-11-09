@@ -24,6 +24,7 @@ import {
 } from "../../types/DeviceEnums";
 import { RedComponent } from "../components/RedComponent";
 import { FirewallBuilder } from "./FirewallBuilder";
+import { SistemaRelaciones } from "../systems";
 
 /**
  * Builder para crear escenarios de forma declarativa y simple
@@ -70,13 +71,16 @@ export class ScenarioBuilder {
       this.crearFase(fase);
     });
 
-    escenario.redes.forEach((red: unknown) => {
-      this.crearRed(red);
-    });
-
     escenario.zonas.forEach((zona: unknown) => {
       const zonaEntidad = this.crearZona(zona, escenarioPadre);
-      const z = zona as { oficinas?: unknown[] };
+      const z = zona as { oficinas?: unknown[]; redes?: unknown[]; };
+      let redesConEntidades = new Map<Entidad, {nombre: string; color: string}>();
+      (z.redes ?? []).forEach((red) => {
+        const entidadRed = this.ecsManager.agregarEntidad();
+        const r = red as {nombre: string; color: string};
+        redesConEntidades.set(entidadRed, r);
+        this.crearRed(zonaEntidad, entidadRed, red);
+      });
       (z.oficinas ?? []).forEach((oficina: unknown) => {
         const oficinaEntidad = this.crearOficina(oficina, zonaEntidad);
         const ofi = oficina as { espacios?: unknown[] };
@@ -86,7 +90,8 @@ export class ScenarioBuilder {
           (esp.dispositivos ?? []).forEach((dispositivo: Dispositivo) => {
             const dispositivoEntidad = this.crearDispositivo(
               dispositivo,
-              espacioEntidad
+              espacioEntidad,
+              redesConEntidades
             );
             this.crearActivos(dispositivoEntidad, dispositivo.activos);
           });
@@ -197,21 +202,20 @@ export class ScenarioBuilder {
     return entidadZona;
   }
 
-  crearRed(red: unknown) {
+  crearRed(entidadZona: Entidad, entidadRed: Entidad, red: unknown) {
     const r = red as {
       nombre: string;
       color: string;
-      dispositivosConectados: string[];
-      zona: string;
     };
-    const entidadRed = this.ecsManager.agregarEntidad();
     const redComponente = new RedComponent(
       r.nombre,
-      r.color,
-      r.dispositivosConectados,
-      r.zona
+      r.color
     );
+
     this.ecsManager.agregarComponente(entidadRed, redComponente);
+    const relacionZonaRed = new SistemaRelaciones(ZonaComponent,RedComponent,"redes");
+    relacionZonaRed.ecsManager = this.ecsManager;
+    relacionZonaRed.agregar(entidadZona, entidadRed);
   }
 
   crearOficina(oficina: unknown, zonaId: number): Entidad {
@@ -256,7 +260,7 @@ export class ScenarioBuilder {
     return entidadEspacio;
   }
 
-  crearDispositivo(dispositivo: unknown, espacioId: number): Entidad {
+  crearDispositivo(dispositivo: unknown, espacioId: number, reds: Map<Entidad, {nombre: string, color: string}>): Entidad {
     const entidadDispositivo = this.ecsManager.agregarEntidad();
     const d = dispositivo as {
       nombre?: string;
@@ -265,7 +269,16 @@ export class ScenarioBuilder {
       tipo?: unknown;
       estadoAtaque?: unknown;
       posicion?: { x: number; y: number; z: number; rotacionY?: number };
+      redes?: string[];
     };
+
+    // Extraer entidades de redes
+    let entidadesRedesDispActual = [];
+    for (const [entidadRed, redMap] of reds.entries()) {
+      for (const red of d.redes!) {
+        if (red == redMap.nombre) entidadesRedesDispActual.push(entidadRed);
+      }
+    }
 
     // Agregar componente de dispositivo
     this.ecsManager.agregarComponente(
@@ -275,7 +288,8 @@ export class ScenarioBuilder {
         d.sistemaOperativo ?? "",
         d.hardware ?? "",
         d.tipo as unknown as TipoDispositivo,
-        d.estadoAtaque as EstadoAtaqueDispositivo
+        d.estadoAtaque as EstadoAtaqueDispositivo,
+        entidadesRedesDispActual
       )
     );
 
@@ -305,36 +319,13 @@ export class ScenarioBuilder {
           conectadoAInternet?: boolean;
           redes?: string[]; // Array de NOMBRES de redes (referencias)
         };
-        // Buscar las entidades RedComponent existentes por nombre
-        const redesIds: Entidad[] = [];
-        const nombresRedes = r.redes ?? [];
-
-        for (const nombreRed of nombresRedes) {
-          let redEncontrada = false;
-          for (const [entidadId, container] of this.ecsManager.getEntidades()) {
-            const redComp = container.get(RedComponent);
-            if (redComp && redComp.nombre === nombreRed) {
-              redesIds.push(entidadId);
-              redEncontrada = true;
-              break;
-            }
-          }
-
-          if (!redEncontrada) {
-            console.warn(
-              `Red "${nombreRed}" no encontrada para el router "${r.nombre}". Asegúrate de definir la red en escenario.redes antes de referenciarla.`
-            );
-          }
-        }
-
         // Agregar RouterComponent con firewall y referencias a redes
         const firewallConfig = new FirewallBuilder().build();
         this.ecsManager.agregarComponente(
           entidadDispositivo,
           new RouterComponent(
             r.conectadoAInternet ?? true,
-            firewallConfig,
-            redesIds
+            firewallConfig
           )
         );
 

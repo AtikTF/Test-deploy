@@ -1,3 +1,4 @@
+import { color } from "framer-motion";
 import { AccionesRealizables, ObjetosManejables } from "../../types/AccionesEnums";
 import {
   EstadoAtaqueDispositivo,
@@ -55,18 +56,16 @@ export const escenarioBase: unknown = {
       faseActual: true,
     },
   ],
-  redes: [
-    {
-      nombre: "LAN1",
-      color: "#00DD00",
-      dispositivosConectados: ["Computadora Administrativa", "Computadora Jacob"],
-      zona: "Edificio Principal - Piso 1",
-    },
-  ],
   zonas: [
     {
       id: 1,
       nombre: "Edificio Principal - Piso 1",
+      redes: [
+        {
+          nombre: "LAN1",
+          color: "#00ff00",
+        }
+      ],
       oficinas: [
         {
           id: 101,
@@ -93,6 +92,7 @@ export const escenarioBase: unknown = {
                       contenido: "La contraseña secreta es 123",
                     },
                   ],
+                  redes: ["LAN1"],
                 },
               ],
             },
@@ -111,6 +111,7 @@ export const escenarioBase: unknown = {
                   posicion: { x: -2, y: 0, z: 0, rotacionY: 180 },
                   estadoAtaque: EstadoAtaqueDispositivo.NORMAL,
                   activos: [],
+                  redes: [],
                 },
               ],
             },
