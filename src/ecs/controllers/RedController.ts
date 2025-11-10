@@ -1,20 +1,23 @@
+import type { PerfilVPNGateway } from "../../types/EscenarioTypes";
 import { EventosRed, EventosVPN } from "../../types/EventosEnums";
 import type { DireccionTrafico, ConfiguracionFirewall, LogFirewall } from "../../types/FirewallTypes";
 import { TipoProtocolo } from "../../types/TrafficEnums";
-import { ClienteVPNComponent, RouterComponent } from "../components";
+import { ClienteVPNComponent, DispositivoComponent, RouterComponent, VPNGatewayComponent, ZonaComponent } from "../components";
 import type { ECSManager } from "../core";
 import type { Entidad } from "../core/Componente";
-import { SistemaRed } from "../systems";
+import { SistemaJerarquiaEscenario, SistemaRed } from "../systems";
 
 export class RedController {
   public ecsManager: ECSManager;
 
   private sistemaRed?: SistemaRed;
+  private sistemaJerarquia?: SistemaJerarquiaEscenario;
 
   private static instance: RedController | null = null;
 
   constructor(ecsManager: ECSManager) {
     this.ecsManager = ecsManager;
+    this.sistemaJerarquia = this.ecsManager.getSistema(SistemaJerarquiaEscenario);
   }
 
   // Singleton
@@ -86,8 +89,6 @@ export class RedController {
           permisos: unknown;
         };
       };
-
-      console.log(this.ecsManager.getComponentes(d.permisosConEntidades.entidadOrigen)?.get(ClienteVPNComponent)?.perfilesClienteVPN);
 
       this.sistemaRed?.enviarTrafico(
         d.permisosConEntidades.entidadOrigen,
@@ -247,4 +248,37 @@ export class RedController {
     }
   }
 
+  getDispositivosPorZona(entidadZona: Entidad): Entidad[] | undefined {
+    return this.sistemaJerarquia?.obtenerDispositivosDeZona(entidadZona);
+  }
+
+  // Se pasa el id del dispositivo actual para filtrar su zona y que solo devuelva los dominios de zonas remotas
+  getDominiosRemotos(entidadDispositivo: Entidad): string[] {
+    let dominiosRemotos: string[] = [];
+    const entidadZonaActual = this.sistemaJerarquia?.obtenerZonaDeDispositivo(entidadDispositivo);
+    const entidadEscenario = this.sistemaJerarquia?.obtenerEscenarioDeZona(entidadZonaActual!);
+
+    for (const entidadZona of this.sistemaJerarquia?.obtenerZonasDeEscenario(entidadEscenario!)!) {
+      if (entidadZona != entidadZonaActual) 
+        dominiosRemotos.push(this.ecsManager.getComponentes(entidadZona)?.get(ZonaComponent)?.dominio!);
+    }
+
+    return dominiosRemotos;
+  }
+
+  getPerfilesVPNGateway(entidadVpnGateway: Entidad): PerfilVPNGateway[] | undefined {
+    return this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway;
+  }
+
+  addPerfilVPNGateway(entidadVpnGateway: Entidad, perfil: PerfilVPNGateway): void {
+    this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway.push(perfil);
+  }
+
+  // Se pasa la entidad del gateway de la cual se quiere eliminar un perfil, y se le pasa el índice de la tabla 
+  // que se corresponde con el array de perfiles (desde arriba de la tabla es el índice 0)
+  removerPerfilVPNGateway(entidadVpnGateway: Entidad, indexEnTabla: number): void {
+    let actualesPerfilesGateway = this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway;
+    actualesPerfilesGateway = actualesPerfilesGateway?.splice(indexEnTabla, 1);
+    console.log(this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway); 
+  }
 }
