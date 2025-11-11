@@ -1,8 +1,8 @@
-import type { PerfilVPNGateway } from "../../types/EscenarioTypes";
+import type { PerfilClienteVPN, PerfilVPNGateway } from "../../types/EscenarioTypes";
 import { EventosRed, EventosVPN } from "../../types/EventosEnums";
 import type { DireccionTrafico, ConfiguracionFirewall, LogFirewall } from "../../types/FirewallTypes";
 import { TipoProtocolo } from "../../types/TrafficEnums";
-import { ClienteVPNComponent, DispositivoComponent, RouterComponent, VPNGatewayComponent, ZonaComponent } from "../components";
+import { ClienteVPNComponent, RouterComponent, VPNGatewayComponent } from "../components";
 import type { ECSManager } from "../core";
 import type { Entidad } from "../core/Componente";
 import { SistemaJerarquiaEscenario, SistemaRed } from "../systems";
@@ -252,15 +252,15 @@ export class RedController {
     return this.sistemaJerarquia?.obtenerDispositivosDeZona(entidadZona);
   }
 
-  // Se pasa el id del dispositivo actual para filtrar su zona y que solo devuelva los dominios de zonas remotas
-  getDominiosRemotos(entidadDispositivo: Entidad): string[] {
-    let dominiosRemotos: string[] = [];
+  // Se pasa el id del dispositivo actual para filtrar su zona y que solo devuelva las zonas remotas
+  getDominiosRemotos(entidadDispositivo: Entidad): Entidad[] {
+    let dominiosRemotos: Entidad[] = [];
     const entidadZonaActual = this.sistemaJerarquia?.obtenerZonaDeDispositivo(entidadDispositivo);
     const entidadEscenario = this.sistemaJerarquia?.obtenerEscenarioDeZona(entidadZonaActual!);
 
     for (const entidadZona of this.sistemaJerarquia?.obtenerZonasDeEscenario(entidadEscenario!)!) {
       if (entidadZona != entidadZonaActual) 
-        dominiosRemotos.push(this.ecsManager.getComponentes(entidadZona)?.get(ZonaComponent)?.dominio!);
+        dominiosRemotos.push(entidadZona);
     }
 
     return dominiosRemotos;
@@ -270,7 +270,7 @@ export class RedController {
     return this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway;
   }
 
-  addPerfilVPNGateway(entidadVpnGateway: Entidad, perfil: PerfilVPNGateway): void {
+  agregarPerfilVPNGateway(entidadVpnGateway: Entidad, perfil: PerfilVPNGateway): void {
     this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway.push(perfil);
   }
 
@@ -279,6 +279,18 @@ export class RedController {
   removerPerfilVPNGateway(entidadVpnGateway: Entidad, indexEnTabla: number): void {
     let actualesPerfilesGateway = this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway;
     actualesPerfilesGateway = actualesPerfilesGateway?.splice(indexEnTabla, 1);
-    console.log(this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway); 
   }
+
+  getPerfilesClienteVPN(entidadClienteVpn: Entidad): PerfilClienteVPN[] | undefined {
+    return this.ecsManager.getComponentes(entidadClienteVpn)?.get(ClienteVPNComponent)?.perfilesClienteVPN;
+  }
+
+  agregarPerfilClienteVPN(entidadClienteVpn: Entidad, perfil: PerfilClienteVPN): void {
+    this.ecsManager.getComponentes(entidadClienteVpn)?.get(ClienteVPNComponent)?.perfilesClienteVPN.push(perfil);
+  }
+
+  removerPerfilClienteVPN(entidadClienteVpn: Entidad, indexEnTabla: number): void {
+    let actualesPerfilesCliente = this.ecsManager.getComponentes(entidadClienteVpn)?.get(ClienteVPNComponent)?.perfilesClienteVPN;
+    actualesPerfilesCliente = actualesPerfilesCliente?.splice(indexEnTabla, 1);
+  }  
 }
