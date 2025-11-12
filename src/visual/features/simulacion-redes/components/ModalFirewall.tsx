@@ -21,9 +21,14 @@ export default function ModalFirewall() {
     const { entidadSeleccionadaId } = useEscenario();
 
     const {
+        router,
         redesRouter,
         estaProtocoloBloqueado,
         toggleProtocolo,
+        bloquearTodos,
+        permitirTodos,
+        modoEntrante,
+        modoSaliente,
         logsFirewall
     } = useFirewall(entidadSeleccionadaId, ecsManager);
 
@@ -38,18 +43,25 @@ export default function ModalFirewall() {
 
     const logs = logsFirewall.map((log: any) => log.mensaje);
 
+    const protocolos = useMemo(() => {
+        return ConfiguracionProtocolos.map(p => p.protocolo);
+    }, []);
+
     return (
         <div className={styles.modalFirewallContainer}>
-            <div style={{ width: "200px" }}>
-                <ComboBox
-                    items={REDES}
-                    value={redSeleccionada}
-                    onChange={setRedSeleccionada}
-                    getKey={(item) => item.value}
-                    getLabel={(item) => item.label}
-                    placeholder="Selecciona una red"
-                />
-            </div>
+            <h2 className={styles.modalFirewallTitle}>Configuración de Firewall</h2>
+            <p className={styles.descripcion}>
+                Configura qué servicios bloquear para cada red y dirección de tráfico
+            </p>
+
+            <ComboBox
+                items={REDES}
+                value={redSeleccionada}
+                onChange={setRedSeleccionada}
+                getKey={(item) => item.value}
+                getLabel={(item) => item.label}
+                placeholder="Selecciona una red"
+            />
 
             {redSeleccionada && (
                 <div className={styles.reglasGrid}>
@@ -64,14 +76,15 @@ export default function ModalFirewall() {
                                     <button
                                         className={styles.toggleTodosBtn}
                                         onClick={() => {
-                                            // Toggle todos los protocolos ENTRANTES
-                                            ConfiguracionProtocolos.forEach(protocolo => {
-                                                toggleProtocolo(protocolo.protocolo, 'ENTRANTE');
-                                            });
+                                            if (modoEntrante === 'bloquear') {
+                                                bloquearTodos(protocolos, 'ENTRANTE');
+                                            } else {
+                                                permitirTodos(protocolos, 'ENTRANTE');
+                                            }
                                         }}
-                                        title="Bloquear/Permitir todos"
+                                        title={modoEntrante === 'permitir' ? "Permitir todos" : "Bloquear todos"}
                                     >
-                                        ✗ Bloquear todos
+                                        {modoEntrante === 'permitir' ? '✓ Permitir todos' : '✗ Bloquear todos'}
                                     </button>
                                 </div>
                                 <div className={styles.serviciosGrid}>
@@ -101,14 +114,15 @@ export default function ModalFirewall() {
                                     <button
                                         className={styles.toggleTodosBtn}
                                         onClick={() => {
-                                            // Toggle todos los protocolos SALIENTES
-                                            ConfiguracionProtocolos.forEach(protocolo => {
-                                                toggleProtocolo(protocolo.protocolo, 'SALIENTE');
-                                            });
+                                            if (modoSaliente === 'bloquear') {
+                                                bloquearTodos(protocolos, 'SALIENTE');
+                                            } else {
+                                                permitirTodos(protocolos, 'SALIENTE');
+                                            }
                                         }}
-                                        title="Bloquear/Permitir todos"
+                                        title={modoSaliente === 'permitir' ? "Permitir todos" : "Bloquear todos"}
                                     >
-                                        ✗ Bloquear todos
+                                        {modoSaliente === 'permitir' ? '✓ Permitir todos' : '✗ Bloquear todos'}
                                     </button>
                                 </div>
                                 <div className={styles.serviciosGrid}>

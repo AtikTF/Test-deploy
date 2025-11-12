@@ -14,6 +14,8 @@ interface RedInfo {
 
 export function useFirewall(entidadRouter: Entidad | null, ecsManager: ECSManager) {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [modoEntrante, setModoEntrante] = useState<'bloquear' | 'permitir'>('bloquear');
+  const [modoSaliente, setModoSaliente] = useState<'bloquear' | 'permitir'>('bloquear');
 
   const redController = useMemo(() => {
     if (!ecsManager) return null;
@@ -25,8 +27,6 @@ export function useFirewall(entidadRouter: Entidad | null, ecsManager: ECSManage
     if (!entidadRouter) return [];
     
     const routerComponent = ecsManager.getComponentes(entidadRouter)?.get(RouterComponent);
-    console.log('RouterComponent:', routerComponent);
-    console.log('logsFirewall:', routerComponent?.logsFirewall);
     return routerComponent?.logsFirewall || [];
   }, [entidadRouter, ecsManager, refreshKey]);
 
@@ -84,7 +84,7 @@ export function useFirewall(entidadRouter: Entidad | null, ecsManager: ECSManage
       : configuracionFirewall.politicaPorDefectoSaliente;
     
     return politica === 'DENEGAR';
-  }, [configuracionFirewall]);
+  }, [configuracionFirewall, refreshKey]);
 
   const toggleProtocolo = useCallback((protocolo: TipoProtocolo, direccion: DireccionTrafico) => {
     if (!entidadRouter || !redController) return;
@@ -96,6 +96,36 @@ export function useFirewall(entidadRouter: Entidad | null, ecsManager: ECSManage
     setRefreshKey(prev => prev + 1); // Refrescar para mostrar el nuevo log
   }, [entidadRouter, redController, estaProtocoloBloqueado]);
 
+  const bloquearTodos = useCallback((protocolos: TipoProtocolo[], direccion: DireccionTrafico) => {
+    if (!entidadRouter || !redController) return;
+    
+    redController.bloquearTodosProtocolos(entidadRouter, protocolos, direccion);
+    
+    // Cambiar el modo para alternar el botón
+    if (direccion === 'ENTRANTE') {
+      setModoEntrante('permitir');
+    } else {
+      setModoSaliente('permitir');
+    }
+    
+    setRefreshKey(prev => prev + 1);
+  }, [entidadRouter, redController]);
+
+  const permitirTodos = useCallback((protocolos: TipoProtocolo[], direccion: DireccionTrafico) => {
+    if (!entidadRouter || !redController) return;
+    
+    redController.permitirTodosProtocolos(entidadRouter, protocolos, direccion);
+    
+    // Cambiar el modo para alternar el botón
+    if (direccion === 'ENTRANTE') {
+      setModoEntrante('bloquear');
+    } else {
+      setModoSaliente('bloquear');
+    }
+    
+    setRefreshKey(prev => prev + 1);
+  }, [entidadRouter, redController]);
+
   const refrescarLogs = useCallback(() => {
     setRefreshKey(prev => prev + 1);
   }, []);
@@ -106,6 +136,10 @@ export function useFirewall(entidadRouter: Entidad | null, ecsManager: ECSManage
     configuracionFirewall,
     estaProtocoloBloqueado,
     toggleProtocolo,
+    bloquearTodos,
+    permitirTodos,
+    modoEntrante,
+    modoSaliente,
     logsFirewall,
     refrescarLogs
   };
