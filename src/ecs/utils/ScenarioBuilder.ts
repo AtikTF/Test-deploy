@@ -339,7 +339,7 @@ export class ScenarioBuilder {
         const firewallConfig = new FirewallBuilder().build();
         this.ecsManager.agregarComponente(
           entidadDispositivo,
-          new RouterComponent(r.conectadoAInternet ?? true, firewallConfig)
+          new RouterComponent(r.conectadoAInternet ?? true, firewallConfig, [])
         );
         break;
       }

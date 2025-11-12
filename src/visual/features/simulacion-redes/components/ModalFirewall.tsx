@@ -21,10 +21,12 @@ export default function ModalFirewall() {
     const { entidadSeleccionadaId } = useEscenario();
 
     const {
-        router,
         redesRouter,
         estaProtocoloBloqueado,
         toggleProtocolo,
+        bloquearTodos,
+        permitirTodos,
+        todosBloqueados,
         logsFirewall
     } = useFirewall(entidadSeleccionadaId, ecsManager);
 
@@ -38,6 +40,20 @@ export default function ModalFirewall() {
     const [redSeleccionada, setRedSeleccionada] = useState<RedOption | null>(REDES[0] || null);
 
     const logs = logsFirewall.map((log: any) => log.mensaje);
+
+    // Obtener lista de protocolos
+    const protocolos = useMemo(() => {
+        return ConfiguracionProtocolos.map(p => p.protocolo);
+    }, []);
+
+    // Verificar si todos están bloqueados para cada dirección
+    const todosEntrantes = useMemo(() => {
+        return todosBloqueados(protocolos, 'ENTRANTE');
+    }, [todosBloqueados, protocolos]);
+
+    const todosSalientes = useMemo(() => {
+        return todosBloqueados(protocolos, 'SALIENTE');
+    }, [todosBloqueados, protocolos]);
 
     return (
         <div className={styles.modalFirewallContainer}>
@@ -68,14 +84,15 @@ export default function ModalFirewall() {
                                     <button
                                         className={styles.toggleTodosBtn}
                                         onClick={() => {
-                                            // Toggle todos los protocolos ENTRANTES
-                                            ConfiguracionProtocolos.forEach(protocolo => {
-                                                toggleProtocolo(protocolo.protocolo, 'ENTRANTE');
-                                            });
+                                            if (todosEntrantes) {
+                                                permitirTodos(protocolos, 'ENTRANTE');
+                                            } else {
+                                                bloquearTodos(protocolos, 'ENTRANTE');
+                                            }
                                         }}
-                                        title="Bloquear/Permitir todos"
+                                        title={todosEntrantes ? "Permitir todos" : "Bloquear todos"}
                                     >
-                                        ✗ Bloquear todos
+                                        {todosEntrantes ? '✓ Permitir todos' : '✗ Bloquear todos'}
                                     </button>
                                 </div>
                                 <div className={styles.serviciosGrid}>
@@ -105,14 +122,15 @@ export default function ModalFirewall() {
                                     <button
                                         className={styles.toggleTodosBtn}
                                         onClick={() => {
-                                            // Toggle todos los protocolos SALIENTES
-                                            ConfiguracionProtocolos.forEach(protocolo => {
-                                                toggleProtocolo(protocolo.protocolo, 'SALIENTE');
-                                            });
+                                            if (todosSalientes) {
+                                                permitirTodos(protocolos, 'SALIENTE');
+                                            } else {
+                                                bloquearTodos(protocolos, 'SALIENTE');
+                                            }
                                         }}
-                                        title="Bloquear/Permitir todos"
+                                        title={todosSalientes ? "Permitir todos" : "Bloquear todos"}
                                     >
-                                        ✗ Bloquear todos
+                                        {todosSalientes ? '✓ Permitir todos' : '✗ Bloquear todos'}
                                     </button>
                                 </div>
                                 <div className={styles.serviciosGrid}>

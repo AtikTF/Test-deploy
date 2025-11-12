@@ -208,6 +208,34 @@ export class RedController {
     this.sistemaRed.setPoliticaFirewallEntrante(entidadRouter, politica);
   }
 
+  public bloquearTodosProtocolos(
+    entidadRouter: Entidad,
+    protocolos: TipoProtocolo[],
+    direccion: DireccionTrafico
+  ): void {
+    if (!this.sistemaRed) {
+      console.error("Sistema de red no inicializado");
+      return;
+    }
+    protocolos.forEach(protocolo => {
+      this.sistemaRed!.agregarReglaFirewall(entidadRouter, protocolo, 'DENEGAR', direccion);
+    });
+  }
+
+  public permitirTodosProtocolos(
+    entidadRouter: Entidad,
+    protocolos: TipoProtocolo[],
+    direccion: DireccionTrafico
+  ): void {
+    if (!this.sistemaRed) {
+      console.error("Sistema de red no inicializado");
+      return;
+    }
+    protocolos.forEach(protocolo => {
+      this.sistemaRed!.agregarReglaFirewall(entidadRouter, protocolo, 'PERMITIR', direccion);
+    });
+  }
+
   public toggleConexionInternet(entidadRouter: Entidad, conectado: boolean): void {
     if (!this.sistemaRed) {
       console.error("Sistema de red no inicializado");

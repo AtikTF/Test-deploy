@@ -96,6 +96,24 @@ export function useFirewall(entidadRouter: Entidad | null, ecsManager: ECSManage
     setRefreshKey(prev => prev + 1); // Refrescar para mostrar el nuevo log
   }, [entidadRouter, redController, estaProtocoloBloqueado]);
 
+  const bloquearTodos = useCallback((protocolos: TipoProtocolo[], direccion: DireccionTrafico) => {
+    if (!entidadRouter || !redController) return;
+    
+    redController.bloquearTodosProtocolos(entidadRouter, protocolos, direccion);
+    setRefreshKey(prev => prev + 1);
+  }, [entidadRouter, redController]);
+
+  const permitirTodos = useCallback((protocolos: TipoProtocolo[], direccion: DireccionTrafico) => {
+    if (!entidadRouter || !redController) return;
+    
+    redController.permitirTodosProtocolos(entidadRouter, protocolos, direccion);
+    setRefreshKey(prev => prev + 1);
+  }, [entidadRouter, redController]);
+
+  const todosBloqueados = useCallback((protocolos: TipoProtocolo[], direccion: DireccionTrafico): boolean => {
+    return protocolos.every(protocolo => estaProtocoloBloqueado(protocolo, direccion));
+  }, [estaProtocoloBloqueado, configuracionFirewall]);
+
   const refrescarLogs = useCallback(() => {
     setRefreshKey(prev => prev + 1);
   }, []);
@@ -106,6 +124,9 @@ export function useFirewall(entidadRouter: Entidad | null, ecsManager: ECSManage
     configuracionFirewall,
     estaProtocoloBloqueado,
     toggleProtocolo,
+    bloquearTodos,
+    permitirTodos,
+    todosBloqueados,
     logsFirewall,
     refrescarLogs
   };

@@ -69,7 +69,7 @@ export class FirewallConfigService {
             direccion
         };
         
-        router.logsFirewall.push(registroEvento);
+        //router.logsFirewall.push(registroEvento);
     }
 
 
