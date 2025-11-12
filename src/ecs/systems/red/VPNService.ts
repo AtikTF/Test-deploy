@@ -15,8 +15,8 @@ export class VPNService {
         permisos: unknown
     ): void {
         const permisosEvento = permisos as {
-            gateway: PerfilVPNGateway,
-            cliente: PerfilClienteVPN
+            gateway: PerfilVPNGateway;
+            cliente: PerfilClienteVPN;
         };
        
         //////////// Lado del cliente 
@@ -75,7 +75,7 @@ export class VPNService {
             perfil.hostRemoto === permisosEvento.gateway.hostRemoto
         )) {
             this.ecsManager.emit(EventosVPN.VPN_CONEXION_RECHAZADA,
-                `Conexión VPN rechazada: ${permisosEvento.gateway.hostLan} no cuenta con un permiso para permitir una conexión VPN con ${permisosEvento.gateway.hostRemoto}.`
+                `Conexión VPN rechazada: ${dispositivoDeVPN?.nombre} no cuenta con un permiso para permitir una conexión VPN con ${permisosEvento.gateway.hostRemoto}.`
             );
             return;
         }

@@ -1,27 +1,24 @@
-import type {
-  PerfilClienteVPN,
-  PerfilVPNGateway,
-} from "../../types/EscenarioTypes";
+import { TipoDispositivo } from "../../types/DeviceEnums";
+import type { PerfilClienteVPN, PerfilVPNGateway } from "../../types/EscenarioTypes";
 import { EventosRed, EventosVPN } from "../../types/EventosEnums";
 import type {
   DireccionTrafico,
   ConfiguracionFirewall,
 } from "../../types/FirewallTypes";
 import { TipoProtocolo } from "../../types/TrafficEnums";
-import {
-  ClienteVPNComponent,
-  RouterComponent,
-  VPNGatewayComponent,
-} from "../components";
+import { ClienteVPNComponent, DispositivoComponent, RouterComponent, VPNGatewayComponent } from "../components";
 import type { ECSManager } from "../core";
 import type { Entidad } from "../core/Componente";
-import { SistemaJerarquiaEscenario, SistemaRed } from "../systems";
+import { SistemaEvento, SistemaJerarquiaEscenario, SistemaRed } from "../systems";
+import { TransferenciaService } from "../systems/red";
 
 export class RedController {
   public ecsManager: ECSManager;
 
   private sistemaRed?: SistemaRed;
+  private sistemaEvento?: SistemaEvento;
   private sistemaJerarquia?: SistemaJerarquiaEscenario;
+  private transferenciaService?: TransferenciaService;
 
   private static instance: RedController | null = null;
 
@@ -53,12 +50,21 @@ export class RedController {
       this.ecsManager.agregarSistema(this.sistemaRed);
     }
 
+    if (!this.sistemaEvento) {
+      this.sistemaEvento = new SistemaEvento();
+      this.ecsManager.agregarSistema(this.sistemaEvento);
+    }
+
+    if (!this.transferenciaService) {
+      this.transferenciaService = new TransferenciaService(this.ecsManager);
+    }
+
     this.ecsManager.on(EventosRed.RED_ENVIAR_ACTIVO, (data: unknown) => {
       const d = data as {
         eventoConEntidades: {
           entidadEmisor: number;
           entidadReceptor: number;
-          nombreActivo: unknown;
+          nombreActivo: string;
         };
       };
       this.sistemaRed?.enviarTrafico(
@@ -306,7 +312,13 @@ export class RedController {
   }
 
   getDispositivosPorZona(entidadZona: Entidad): Entidad[] | undefined {
-    return this.sistemaJerarquia?.obtenerDispositivosDeZona(entidadZona);
+    let worksYServersDeZona: Entidad[] = [];
+    for (const entidadDispositivo of this.sistemaJerarquia?.obtenerDispositivosDeZona(entidadZona)!) {
+      const tipoDispositivo = this.ecsManager.getComponentes(entidadDispositivo)?.get(DispositivoComponent)?.tipo;
+      if (tipoDispositivo === TipoDispositivo.WORKSTATION || tipoDispositivo === TipoDispositivo.SERVER)
+        worksYServersDeZona.push(entidadDispositivo);
+    }
+    return worksYServersDeZona;
   }
 
   // Obtiene las zonas locales del router/gateway (la zona donde está el dispositivo)

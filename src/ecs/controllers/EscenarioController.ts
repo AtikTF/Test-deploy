@@ -127,7 +127,6 @@ export class EscenarioController {
       console.log("Se agotó el presupuesto, fin de la partida.");
     });
 
-        console.log(this.ecsManager);
     this.escenarioIniciado = true;
   }
 

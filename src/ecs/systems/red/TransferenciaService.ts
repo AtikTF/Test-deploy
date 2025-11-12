@@ -31,53 +31,41 @@ export class TransferenciaService {
       .getComponentes(entidadEnvio)
       ?.get(DispositivoComponent);
 
-    if (!activosReceptor || !dispReceptor) {
-      this.ecsManager.emit(EventosRed.RED_ACTIVO_NO_ENVIADO, {
-        descripcion: `Activo no enviado: ${dispReceptor?.nombre} no tiene componente de activos.`,
-      });
-      return;
+        if (!activosReceptor || !dispReceptor) {
+            this.ecsManager.emit(EventosRed.RED_ACTIVO_NO_ENVIADO, {
+                descripcion: `Activo no enviado: ${dispReceptor?.nombre} no tiene componente de activos.`
+            });
+            return;
+        }
+
+        if (!activosEmisor || !dispEmisor) {
+            this.ecsManager.emit(EventosRed.RED_ACTIVO_NO_ENVIADO, {
+                descripcion: `Activo no enviado: ${dispEmisor?.nombre} no tiene componente de activos.`
+            });
+            return;
+        }
+
+        // Obtener el activo a enviar
+        const activoAenviar = activosEmisor.activos.find((a) => a.nombre === activo);
+        if (!activoAenviar) {
+            this.ecsManager.emit(EventosRed.RED_ACTIVO_NO_ENVIADO, {
+                descripcion: `Activo no enviado: ${dispEmisor?.nombre} no tiene el activo: ${activo}.`
+            });
+            return;
+        }
+
+        // Verificar si el receptor ya tiene el activo
+        if (activosReceptor.activos.some(a => a.nombre === activoAenviar.nombre &&
+                                   a.contenido === activoAenviar.contenido)) {
+            this.ecsManager.emit(EventosRed.RED_ACTIVO_NO_ENVIADO, {
+                descripcion: `Activo no enviado: ${dispReceptor?.nombre} ya contiene el activo: ${activo}.`
+            });
+            return;
+        }
+ 
+        // Transferir activo
+        activosReceptor.activos.push(activoAenviar);
+
+        this.eventoService?.emitirActivoEnviado(activo, dispEmisor.nombre, dispReceptor.nombre);
     }
-
-    if (!activosEmisor || !dispEmisor) {
-      this.ecsManager.emit(EventosRed.RED_ACTIVO_NO_ENVIADO, {
-        descripcion: `Activo no enviado: ${dispEmisor?.nombre} no tiene componente de activos.`,
-      });
-      return;
-    }
-
-    // Obtener el activo a enviar
-    const activoAenviar = activosEmisor.activos.find(
-      (a) => a.nombre === activo
-    );
-    if (!activoAenviar) {
-      this.ecsManager.emit(EventosRed.RED_ACTIVO_NO_ENVIADO, {
-        descripcion: `Activo no enviado: ${dispEmisor?.nombre} no tiene el activo: ${activo}.`,
-      });
-      return;
-    }
-
-    // Verificar si el receptor ya tiene el activo
-    if (
-      activosReceptor.activos.some(
-        (a) =>
-          a.nombre === activoAenviar.nombre &&
-          a.contenido === activoAenviar.contenido
-      )
-    ) {
-      console.warn("El dispositivo receptor ya contiene activo:", activo);
-      this.ecsManager.emit(EventosRed.RED_ACTIVO_NO_ENVIADO, {
-        descripcion: `Activo no enviado: ${dispReceptor?.nombre} ya contiene el activo: ${activo}.`,
-      });
-      return;
-    }
-
-    // Transferir activo
-    activosReceptor.activos.push(activoAenviar);
-
-    this.eventoService?.emitirActivoEnviado(
-      activo,
-      dispEmisor.nombre,
-      dispReceptor.nombre
-    );
-  }
 }
