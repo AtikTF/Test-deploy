@@ -19,15 +19,37 @@
   transform: translate(-50%, -50%);
   z-index: 9999;
   max-width: 90vw;
-  max-height: 90vh;
+  max-height: 85vh;
   overflow: hidden;
   animation: modalSlideIn 0.3s ease-out;
 }
 
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-primary);
+  gap: 16px;
+  min-height: 56px;
+}
+
+.modalHeader:has(.modalTitle) {
+  justify-content: space-between;
+}
+
+.modalHeader:not(:has(.modalTitle)) {
+  justify-content: flex-end;
+}
+
+.modalTitle {
+  margin: 0;
+  color: var(--text-primary);
+  flex: 1;
+}
+
 .modalCloseButton {
-  position: absolute;
-  top: 24px;
-  right: 24px;
+  flex-shrink: 0;
   width: 40px;
   height: 40px;
   border: none;
@@ -39,7 +61,8 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  z-index: 10000;
+  background: var(--surface-secondary);
+  padding: 0;
 }
 
 .modalCloseButton:active {
@@ -48,7 +71,6 @@
 
 /* Contenido del modal */
 .modalContent {
-  padding: 24px;
   overflow-y: auto;
   max-height: 90vh;
 }

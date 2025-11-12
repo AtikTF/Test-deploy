@@ -5,14 +5,17 @@ import styles from "../styles/Dispositivos.module.css"
 
 import ComboBox from "../../../common/components/ComboBox";
 import PanelConfiguraciones from "../components/PanelConfiguraciones";
-import { useEscenario } from "../../../common/contexts";
+import { useEscenario, useModal } from "../../../common/contexts";
 import type { Dispositivo } from "../../../../types/EscenarioTypes";
 import ConexionIcon from "../../../common/icons/ConexionIcon";
 import RedChip from "../../simulacion-redes/components/RedChip";
 import { useDispositivos } from "../hooks";
+import VPNIcon from "../../../common/icons/VPNIcon";
+import ModalVPNCliente from "../../simulacion-redes/components/ModalVPNCliente";
 
 function Dispositivos() {
     const { setDispositivoSeleccionado, dispositivoSeleccionado } = useEscenario();
+    const { openModal } = useModal();
     const { dispositivos } = useDispositivos();
 
     useEffect(() => {
@@ -31,15 +34,20 @@ function Dispositivos() {
     }, [dispositivos]);
 
     return <div className={styles.contenedor}>
-        <div className={styles.comboBoxDispositivo}>
-            <ComboBox<Dispositivo>
-                items={dispositivos}
-                value={dispositivoSeleccionado}
-                onChange={setDispositivoSeleccionado}
-                getKey={(d) => d.id.toString()}
-                getLabel={(d) => d.nombre ?? "Dispositivo sin nombre"}
-                icon={<DevicesIcon size={16} />}
-            />
+        <div className={styles.parteSuperior}>
+            <div className={styles.comboBoxDispositivo}>
+                <ComboBox<Dispositivo>
+                    items={dispositivos}
+                    value={dispositivoSeleccionado}
+                    onChange={setDispositivoSeleccionado}
+                    getKey={(d) => d.id.toString()}
+                    getLabel={(d) => d.nombre ?? "Dispositivo sin nombre"}
+                    icon={<DevicesIcon size={16} />}
+                />
+            </div>
+            <button onClick={() => openModal(<ModalVPNCliente />, 'Configuración de VPN Cliente')}>
+                <VPNIcon />Configurar VPN
+            </button>
         </div>
         <div className={styles.contenidoDispositivo}>
             <img draggable={false} className={styles.imagenDispositivo} src="/assets/models_picture/workstation.webp" alt="Imagen de Estación de trabajo" />

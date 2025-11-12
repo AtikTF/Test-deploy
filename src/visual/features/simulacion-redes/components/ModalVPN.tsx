@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import ComboBox from "../../../common/components/ComboBox";
 import styles from "../styles/ModalVPN.module.css";
 import { TipoProteccionVPN } from "../../../../types/DeviceEnums";
-import { RedController } from "../../../../ecs/controllers/RedController";
 import { useECSScene } from "../../escenarios-simulados/hooks/useECSScene";
 import { useEscenario } from "../../../common/contexts";
 import type { PerfilVPNGateway } from "../../../../types/EscenarioTypes";

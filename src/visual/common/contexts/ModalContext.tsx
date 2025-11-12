@@ -5,7 +5,8 @@ import type { ReactNode } from 'react';
 interface ModalContextType {
     isOpen: boolean;
     modalContent: ReactNode | null;
-    openModal: (content: ReactNode) => void;
+    modalTitle: string | null;
+    openModal: (content: ReactNode, title?: string) => void;
     closeModal: () => void;
 }
 
@@ -21,20 +22,25 @@ interface ModalProviderProps {
 export function ModalProvider({ children }: ModalProviderProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [modalContent, setModalContent] = useState<ReactNode | null>(null);
+    const [modalTitle, setModalTitle] = useState<string | null>(null);
 
-    const openModal = (content: ReactNode) => {
+    const openModal = (content: ReactNode, title?: string) => {
         setModalContent(content);
+        setModalTitle(title || null);
         setIsOpen(true);
     };
 
     const closeModal = () => {
         setIsOpen(false);
         // Pequeño delay antes de limpiar el contenido para permitir animaciones
-        setTimeout(() => setModalContent(null), 300);
+        setTimeout(() => {
+            setModalContent(null);
+            setModalTitle(null);
+        }, 300);
     };
 
     return (
-        <ModalContext.Provider value={{ isOpen, modalContent, openModal, closeModal }}>
+        <ModalContext.Provider value={{ isOpen, modalContent, modalTitle, openModal, closeModal }}>
             {children}
         </ModalContext.Provider>
     );
@@ -46,7 +52,10 @@ export function ModalProvider({ children }: ModalProviderProps) {
  * @example
  * const { openModal, closeModal } = useModal();
  * 
- * // Abrir modal con contenido personalizado
+ * // Abrir modal con contenido personalizado y título
+ * openModal(<ModalFirewall />, 'Configuración de Firewall');
+ * 
+ * // Abrir modal sin título
  * openModal(<ModalFirewall />);
  * 
  * // Cerrar modal

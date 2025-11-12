@@ -61,3 +61,12 @@
   margin-left: 16px;
   min-width: 450px;
 }
+
+.parteSuperior {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.parteSuperior > button {
+  border: 1px solid var(--border-primary);
+}
