@@ -80,7 +80,10 @@ const RadialMenu: React.FC<RadialMenuProps> = ({ onClose, options, onNavigate })
                                 transform: `translate(-50%, -50%) translate(${translateX}px, ${translateY}px)`,
                                 animationDelay: `${index * 0.05}s`
                             }}
-                            onClick={() => {
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+
                                 // Si tiene ruta 'to', navegar a esa ruta
                                 if (option.to && onNavigate) {
                                     onNavigate(option.to);

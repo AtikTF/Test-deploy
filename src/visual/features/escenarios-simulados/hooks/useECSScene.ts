@@ -383,6 +383,7 @@ export function useECSScene() {
     toggleLogsPanel,
     setMostrarNuevoLog,
     setMensajeLog,
+    redController,
     ecsManager: escenarioController.ecsManager,
     builder: escenarioController.builder,
     processEntities,
