@@ -1,8 +1,18 @@
-import type { PerfilClienteVPN, PerfilVPNGateway } from "../../types/EscenarioTypes";
+import type {
+  PerfilClienteVPN,
+  PerfilVPNGateway,
+} from "../../types/EscenarioTypes";
 import { EventosRed, EventosVPN } from "../../types/EventosEnums";
-import type { DireccionTrafico, ConfiguracionFirewall } from "../../types/FirewallTypes";
+import type {
+  DireccionTrafico,
+  ConfiguracionFirewall,
+} from "../../types/FirewallTypes";
 import { TipoProtocolo } from "../../types/TrafficEnums";
-import { ClienteVPNComponent, RouterComponent, VPNGatewayComponent } from "../components";
+import {
+  ClienteVPNComponent,
+  RouterComponent,
+  VPNGatewayComponent,
+} from "../components";
 import type { ECSManager } from "../core";
 import type { Entidad } from "../core/Componente";
 import { SistemaJerarquiaEscenario, SistemaRed } from "../systems";
@@ -17,7 +27,9 @@ export class RedController {
 
   constructor(ecsManager: ECSManager) {
     this.ecsManager = ecsManager;
-    this.sistemaJerarquia = this.ecsManager.getSistema(SistemaJerarquiaEscenario);
+    this.sistemaJerarquia = this.ecsManager.getSistema(
+      SistemaJerarquiaEscenario
+    );
   }
 
   // Singleton
@@ -42,11 +54,13 @@ export class RedController {
     }
 
     this.ecsManager.on(EventosRed.RED_ENVIAR_ACTIVO, (data: unknown) => {
-      const d = data as { eventoConEntidades: {
-        entidadEmisor: number,
-        entidadReceptor: number,
-        nombreActivo: unknown
-      }};
+      const d = data as {
+        eventoConEntidades: {
+          entidadEmisor: number;
+          entidadReceptor: number;
+          nombreActivo: unknown;
+        };
+      };
       this.sistemaRed?.enviarTrafico(
         d.eventoConEntidades.entidadEmisor,
         d.eventoConEntidades.entidadReceptor,
@@ -56,8 +70,10 @@ export class RedController {
     });
 
     this.ecsManager.on(EventosRed.RED_ACTIVO_ENVIADO, (data: unknown) => {
-      const d = data as {nombreActivo: string, d1: string, d2: string};
-      console.log(`Se envió un activo: ${d.nombreActivo}. Desde ${d.d1} hacia ${d.d2}.`);
+      const d = data as { nombreActivo: string; d1: string; d2: string };
+      console.log(
+        `Se envió un activo: ${d.nombreActivo}. Desde ${d.d1} hacia ${d.d2}.`
+      );
     });
 
     this.ecsManager.on(EventosRed.RED_TRAFICO, (data: unknown) => {
@@ -208,7 +224,10 @@ export class RedController {
     this.sistemaRed.setPoliticaFirewallEntrante(entidadRouter, politica);
   }
 
-  public toggleConexionInternet(entidadRouter: Entidad, conectado: boolean): void {
+  public toggleConexionInternet(
+    entidadRouter: Entidad,
+    conectado: boolean
+  ): void {
     if (!this.sistemaRed) {
       console.error("Sistema de red no inicializado");
       return;
@@ -216,7 +235,9 @@ export class RedController {
     this.sistemaRed.setConectadoAInternet(entidadRouter, conectado);
   }
 
-  public obtenerConfiguracionFirewall(entidadRouter: Entidad): ConfiguracionFirewall | null {
+  public obtenerConfiguracionFirewall(
+    entidadRouter: Entidad
+  ): ConfiguracionFirewall | null {
     const container = this.ecsManager.getComponentes(entidadRouter);
     const routerComponent = container?.get(RouterComponent);
     return routerComponent?.firewall || null;
@@ -234,50 +255,92 @@ export class RedController {
     return this.sistemaRed.obtenerRedesDeRouter(entidadRouter);
   }
 
-
   getDispositivosPorZona(entidadZona: Entidad): Entidad[] | undefined {
     return this.sistemaJerarquia?.obtenerDispositivosDeZona(entidadZona);
+  }
+
+  // Obtiene las zonas locales del router/gateway (la zona donde está el dispositivo)
+  getZonasLocales(entidadDispositivo: Entidad): Entidad[] {
+    const entidadZonaActual =
+      this.sistemaJerarquia?.obtenerZonaDeDispositivo(entidadDispositivo);
+
+    // Devuelve solo la zona actual del dispositivo como zona local
+    return entidadZonaActual ? [entidadZonaActual] : [];
   }
 
   // Se pasa el id del dispositivo actual para filtrar su zona y que solo devuelva las zonas remotas
   getDominiosRemotos(entidadDispositivo: Entidad): Entidad[] {
     let dominiosRemotos: Entidad[] = [];
-    const entidadZonaActual = this.sistemaJerarquia?.obtenerZonaDeDispositivo(entidadDispositivo);
-    const entidadEscenario = this.sistemaJerarquia?.obtenerEscenarioDeZona(entidadZonaActual!);
+    const entidadZonaActual =
+      this.sistemaJerarquia?.obtenerZonaDeDispositivo(entidadDispositivo);
+    const entidadEscenario = this.sistemaJerarquia?.obtenerEscenarioDeZona(
+      entidadZonaActual!
+    );
 
-    for (const entidadZona of this.sistemaJerarquia?.obtenerZonasDeEscenario(entidadEscenario!)!) {
-      if (entidadZona != entidadZonaActual) 
-        dominiosRemotos.push(entidadZona);
+    for (const entidadZona of this.sistemaJerarquia?.obtenerZonasDeEscenario(
+      entidadEscenario!
+    )!) {
+      if (entidadZona != entidadZonaActual) dominiosRemotos.push(entidadZona);
     }
 
     return dominiosRemotos;
   }
 
-  getPerfilesVPNGateway(entidadVpnGateway: Entidad): PerfilVPNGateway[] | undefined {
-    return this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway;
+  getPerfilesVPNGateway(
+    entidadVpnGateway: Entidad
+  ): PerfilVPNGateway[] | undefined {
+    return this.ecsManager
+      .getComponentes(entidadVpnGateway)
+      ?.get(VPNGatewayComponent)?.perfilesVPNGateway;
   }
 
-  agregarPerfilVPNGateway(entidadVpnGateway: Entidad, perfil: PerfilVPNGateway): void {
-    this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway.push(perfil);
+  agregarPerfilVPNGateway(
+    entidadVpnGateway: Entidad,
+    perfil: PerfilVPNGateway
+  ): void {
+    this.ecsManager
+      .getComponentes(entidadVpnGateway)
+      ?.get(VPNGatewayComponent)
+      ?.perfilesVPNGateway.push(perfil);
   }
 
-  // Se pasa la entidad del gateway de la cual se quiere eliminar un perfil, y se le pasa el índice de la tabla 
+  // Se pasa la entidad del gateway de la cual se quiere eliminar un perfil, y se le pasa el índice de la tabla
   // que se corresponde con el array de perfiles (desde arriba de la tabla es el índice 0)
-  removerPerfilVPNGateway(entidadVpnGateway: Entidad, indexEnTabla: number): void {
-    let actualesPerfilesGateway = this.ecsManager.getComponentes(entidadVpnGateway)?.get(VPNGatewayComponent)?.perfilesVPNGateway;
+  removerPerfilVPNGateway(
+    entidadVpnGateway: Entidad,
+    indexEnTabla: number
+  ): void {
+    let actualesPerfilesGateway = this.ecsManager
+      .getComponentes(entidadVpnGateway)
+      ?.get(VPNGatewayComponent)?.perfilesVPNGateway;
     actualesPerfilesGateway = actualesPerfilesGateway?.splice(indexEnTabla, 1);
   }
 
-  getPerfilesClienteVPN(entidadClienteVpn: Entidad): PerfilClienteVPN[] | undefined {
-    return this.ecsManager.getComponentes(entidadClienteVpn)?.get(ClienteVPNComponent)?.perfilesClienteVPN;
+  getPerfilesClienteVPN(
+    entidadClienteVpn: Entidad
+  ): PerfilClienteVPN[] | undefined {
+    return this.ecsManager
+      .getComponentes(entidadClienteVpn)
+      ?.get(ClienteVPNComponent)?.perfilesClienteVPN;
   }
 
-  agregarPerfilClienteVPN(entidadClienteVpn: Entidad, perfil: PerfilClienteVPN): void {
-    this.ecsManager.getComponentes(entidadClienteVpn)?.get(ClienteVPNComponent)?.perfilesClienteVPN.push(perfil);
+  agregarPerfilClienteVPN(
+    entidadClienteVpn: Entidad,
+    perfil: PerfilClienteVPN
+  ): void {
+    this.ecsManager
+      .getComponentes(entidadClienteVpn)
+      ?.get(ClienteVPNComponent)
+      ?.perfilesClienteVPN.push(perfil);
   }
 
-  removerPerfilClienteVPN(entidadClienteVpn: Entidad, indexEnTabla: number): void {
-    let actualesPerfilesCliente = this.ecsManager.getComponentes(entidadClienteVpn)?.get(ClienteVPNComponent)?.perfilesClienteVPN;
+  removerPerfilClienteVPN(
+    entidadClienteVpn: Entidad,
+    indexEnTabla: number
+  ): void {
+    let actualesPerfilesCliente = this.ecsManager
+      .getComponentes(entidadClienteVpn)
+      ?.get(ClienteVPNComponent)?.perfilesClienteVPN;
     actualesPerfilesCliente = actualesPerfilesCliente?.splice(indexEnTabla, 1);
-  }  
+  }
 }

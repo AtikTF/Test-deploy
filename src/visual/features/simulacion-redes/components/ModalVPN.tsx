@@ -5,32 +5,12 @@ import { TipoProteccionVPN } from "../../../../types/DeviceEnums";
 import { useECSSceneContext } from "../../escenarios-simulados/context/ECSSceneContext";
 import { useEscenario } from "../../../common/contexts";
 import type { PerfilVPNGateway } from "../../../../types/EscenarioTypes";
+import TrashIcon from "../../../common/icons/TrashIcon";
+import { ZonaComponent } from "../../../../ecs/components/ZonaComponent";
+import { DispositivoComponent } from "../../../../ecs/components";
+import getIconoNodo from "../utils/getIconoNodo";
 
 type OptionItem = { label: string; value: string };
-
-const OPCIONES_LAN_LOCAL = [
-  { label: "LAN 1", value: "lan1" },
-  { label: "LAN 2", value: "lan2" },
-  { label: "LAN 3", value: "lan3" },
-]
-
-const HOST_LOCAL_OPCIONES = [
-  { label: "PC Local 1", value: "host_local1" },
-  { label: "PC Local 2", value: "host_local2" },
-  { label: "PC Local 3", value: "host_local3" },
-]
-
-const DOMINIO_REMOTO_OPCIONES = [
-  { label: "dominio1.com", value: "dominio1.com" },
-  { label: "dominio2.com", value: "dominio2.com" },
-  { label: "dominio3.com", value: "dominio3.com" },
-]
-
-const HOST_REMOTO_OPCIONES = [
-  { label: "PC Remota 1", value: "host1" },
-  { label: "PC Remota 2", value: "host2" },
-  { label: "PC Remota 3", value: "host3" },
-]
 
 // No cambiar estos valores, deben coincidir con 
 // el enum TipoProteccionVPN
@@ -49,6 +29,11 @@ export default function ModalVPN() {
   const [hostRemoto, setHostRemoto] = useState<OptionItem | null>(null);
 
   const [configuraciones, setConfiguraciones] = useState<Array<PerfilVPNGateway>>([]);
+  const [lanLocalOpciones, setLanLocalOpciones] = useState<Array<OptionItem>>([]);
+  const [hostLanOpciones, setHostLanOpciones] = useState<Array<OptionItem>>([]);
+  const [dominioRemotoOpciones, setDominioRemotoOpciones] = useState<Array<OptionItem>>([]);
+  const [hostRemotoOpciones, setHostRemotoOpciones] = useState<Array<OptionItem>>([]);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const isPrimeraParteCompleta = lanLocal && dominioRemoto;
   const isFormularioCompleto = lanLocal && hostLan && proteccion && dominioRemoto && hostRemoto;
@@ -56,12 +41,115 @@ export default function ModalVPN() {
   const { redController } = useECSSceneContext();
   const { entidadSeleccionadaId } = useEscenario();
 
+  function eliminarPerfilVPNGateway(indiceEnTabla: number) {
+    redController.removerPerfilVPNGateway(entidadSeleccionadaId!, indiceEnTabla);
+
+    const perfilesActualizados = redController.getPerfilesVPNGateway(entidadSeleccionadaId!);
+    if (perfilesActualizados) {
+      setConfiguraciones([...perfilesActualizados]);
+    }
+  }
+
   useEffect(() => {
-    setConfiguraciones(redController.getPerfilesVPNGateway(entidadSeleccionadaId!)!);
+    const perfiles = redController.getPerfilesVPNGateway(entidadSeleccionadaId!);
+    if (perfiles) {
+      setConfiguraciones(perfiles);
+    }
+
+    // Obtener LANs locales (zonas del gateway actual)
+    const lanLocalesEntidades = redController.getZonasLocales(entidadSeleccionadaId!);
+    if (lanLocalesEntidades) {
+      const opciones = lanLocalesEntidades
+        .map((entidad) => {
+          const zonaComponent = redController.ecsManager.getComponentes(entidad)?.get(ZonaComponent);
+          return zonaComponent
+            ? { label: zonaComponent.nombre || zonaComponent.dominio, value: entidad.toString() }
+            : null;
+        })
+        .filter((opcion): opcion is OptionItem => opcion !== null);
+      setLanLocalOpciones(opciones);
+    }
+
+    // Obtener dominios remotos
+    const dominiosRemotos = redController.getDominiosRemotos(entidadSeleccionadaId!);
+    if (dominiosRemotos) {
+      const opciones = dominiosRemotos
+        .map((entidad) => {
+          const zonaComponent = redController.ecsManager.getComponentes(entidad)?.get(ZonaComponent);
+          return zonaComponent
+            ? { label: zonaComponent.dominio, value: entidad.toString() }
+            : null;
+        })
+        .filter((opcion): opcion is OptionItem => opcion !== null);
+      setDominioRemotoOpciones(opciones);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!lanLocal?.value) {
+      setHostLanOpciones([]);
+      return;
+    }
+
+    const entidadZona = parseInt(lanLocal.value);
+    const hosts = redController.getDispositivosPorZona(entidadZona);
+
+    if (hosts) {
+      const opcionesHosts = hosts
+        .map((entidad) => {
+          const dispositivoComponent = redController.ecsManager.getComponentes(entidad)?.get(DispositivoComponent);
+          return dispositivoComponent
+            ? { label: dispositivoComponent.nombre, value: entidad.toString() }
+            : null;
+        })
+        .filter((opcion): opcion is OptionItem => opcion !== null);
+      setHostLanOpciones(opcionesHosts);
+    }
+  }, [lanLocal, redController]);
+
+  useEffect(() => {
+    if (!dominioRemoto?.value) {
+      setHostRemotoOpciones([]);
+      return;
+    }
+
+    setErrorMessage("");
+
+    const entidadZona = parseInt(dominioRemoto.value);
+    const hosts = redController.getDispositivosPorZona(entidadZona);
+
+    if (hosts) {
+      const opcionesHosts = hosts
+        .map((entidad) => {
+          const dispositivoComponent = redController.ecsManager.getComponentes(entidad)?.get(DispositivoComponent);
+          return dispositivoComponent
+            ? { label: dispositivoComponent.nombre, value: entidad.toString() }
+            : null;
+        })
+        .filter((opcion): opcion is OptionItem => opcion !== null);
+      setHostRemotoOpciones(opcionesHosts);
+    }
+  }, [dominioRemoto, redController]);
+
+  useEffect(() => {
+    setErrorMessage("");
+  }, [lanLocal, hostLan, proteccion, hostRemoto]);
 
   const agregarConfiguracion = () => {
     if (isFormularioCompleto) {
+      const configExistente = configuraciones.some(
+        (config) =>
+          config.lanLocal === lanLocal!.value &&
+          config.hostLan === hostLan!.value &&
+          config.proteccion === proteccion!.value &&
+          config.dominioRemoto === dominioRemoto!.value &&
+          config.hostRemoto === hostRemoto!.value
+      );
+
+      if (configExistente) {
+        setErrorMessage("Esta configuración ya existe.");
+        return;
+      }
 
       redController.agregarPerfilVPNGateway(
         entidadSeleccionadaId!,
@@ -79,98 +167,187 @@ export default function ModalVPN() {
       setProteccion(null);
       setDominioRemoto(null);
       setHostRemoto(null);
+      setErrorMessage("");
+
+      const perfilesActualizados = redController.getPerfilesVPNGateway(entidadSeleccionadaId!);
+      if (perfilesActualizados) {
+        setConfiguraciones(perfilesActualizados);
+      }
     }
   };
 
   return (
     <div className={styles.modalVPNContainer}>
-
-      <h2>Configuración de VPN</h2>
+      <p className={styles.nota}>
+        Como gateway VPN, define las conexiones entre hosts de tus LANs y destinos externos.
+      </p>
       <div className={styles.formContainer}>
         <div className={styles.primeraParte}>
-          <div className={styles.inputGroup} >
+          <div className={styles.inputGroup}>
             <p className={styles.label}>LAN Local</p>
             <ComboBox
-              items={OPCIONES_LAN_LOCAL}
+              items={lanLocalOpciones}
+              placeholder="Seleccionar"
               value={lanLocal}
               onChange={setLanLocal}
               getKey={(item) => item.value}
               getLabel={(item) => item.label}
             />
-          </div >
-          <div className={styles.inputGroup} >
+          </div>
+          <div className={styles.inputGroup}>
             <p className={styles.label}>Dominio Remoto</p>
-            <div >
-              <ComboBox
-                items={DOMINIO_REMOTO_OPCIONES}
-                placeholder="Dominio remoto"
-                value={dominioRemoto}
-                onChange={setDominioRemoto}
-                getKey={(item) => item.value}
-                getLabel={(item) => item.label}
-              />
-
-            </div>
+            <ComboBox
+              items={dominioRemotoOpciones}
+              placeholder="Seleccionar"
+              value={dominioRemoto}
+              onChange={setDominioRemoto}
+              getKey={(item) => item.value}
+              getLabel={(item) => item.label}
+            />
           </div>
         </div>
         <div
           className={`${styles.segundaParte} ${isPrimeraParteCompleta ? styles.visible : styles.hidden
             }`}
         >
-          <div className={styles.inputGroup} >
+          <div className={styles.inputGroup}>
             <p className={styles.label}>Protección</p>
-            <div >
-              <ComboBox
-                items={OPCIONES_PROTECCION}
-                placeholder="Protección"
-                value={proteccion}
-                onChange={setProteccion}
-                getKey={(item) => item.value}
-                getLabel={(item) => item.label}
-              />
-            </div>
-
+            <ComboBox
+              items={OPCIONES_PROTECCION}
+              placeholder="Seleccionar"
+              value={proteccion}
+              onChange={setProteccion}
+              getKey={(item) => item.value}
+              getLabel={(item) => item.label}
+            />
           </div>
-          <div className={styles.inputGroup} >
+          <div className={styles.inputGroup}>
             <p className={styles.label}>Host en LAN</p>
-            <div >
-              <ComboBox
-                items={HOST_LOCAL_OPCIONES}
-                value={hostLan}
-                onChange={setHostLan}
-                getKey={(item) => item.value}
-                getLabel={(item) => item.label}
-              />
-            </div>
+            <ComboBox
+              items={hostLanOpciones}
+              placeholder="Seleccionar"
+              value={hostLan}
+              onChange={setHostLan}
+              getKey={(item) => item.value}
+              getLabel={(item) => item.label}
+            />
           </div>
-          <div className={styles.inputGroup} >
+          <div className={styles.inputGroup}>
             <p className={styles.label}>Host remoto</p>
-            <div >
-              <ComboBox
-                items={HOST_REMOTO_OPCIONES}
-                placeholder="Host remoto"
-                value={hostRemoto}
-                onChange={setHostRemoto}
-                getKey={(item) => item.value}
-                getLabel={(item) => item.label}
-              />
-            </div>
+            <ComboBox
+              items={hostRemotoOpciones}
+              placeholder="Seleccionar"
+              value={hostRemoto}
+              onChange={setHostRemoto}
+              getKey={(item) => item.value}
+              getLabel={(item) => item.label}
+            />
           </div>
           <button onClick={agregarConfiguracion} disabled={!isFormularioCompleto}>
             +
           </button>
         </div>
+        {errorMessage && (
+          <div className={styles.errorMessage}>{errorMessage}</div>
+        )}
       </div>
+      <h3>Configuraciones Agregadas</h3>
       <div className={styles.listaConfiguraciones}>
-        <h3>Configuraciones Agregadas</h3>
-        <ul>
-          {configuraciones.map((config, index) => (
-            <li key={index}>
-              LAN Local: {config.lanLocal}, Host en LAN: {config.hostLan}, Protección: {config.proteccion}, Dominio Remoto: {config.dominioRemoto}, Host Remoto: {config.hostRemoto}
-            </li>
-          ))}
-        </ul>
+        {configuraciones.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p>No hay configuraciones agregadas</p>
+          </div>
+        ) : (
+          <>
+            {configuraciones.map((config, index) => (
+              <ConfiguracionVpnGateway
+                key={index}
+                index={index}
+                lanLocal={config.lanLocal}
+                hostLan={config.hostLan}
+                proteccion={config.proteccion}
+                dominioRemoto={config.dominioRemoto}
+                hostRemoto={config.hostRemoto}
+                redController={redController}
+                onEliminar={eliminarPerfilVPNGateway}
+              />
+            ))}
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+interface ConfiguracionVpnGatewayProps extends PerfilVPNGateway {
+  index: number;
+  redController: ReturnType<typeof useECSSceneContext>["redController"];
+  onEliminar: (index: number) => void;
+}
+
+function ConfiguracionVpnGateway({
+  index,
+  lanLocal,
+  hostLan,
+  proteccion,
+  dominioRemoto,
+  hostRemoto,
+  redController,
+  onEliminar
+}: ConfiguracionVpnGatewayProps) {
+
+  const entidadLanLocal = parseInt(lanLocal);
+  const zonaLocalComponent = redController.ecsManager.getComponentes(entidadLanLocal)?.get(ZonaComponent);
+  const nombreLanLocal = zonaLocalComponent?.nombre || zonaLocalComponent?.dominio || lanLocal;
+
+  const entidadHostLan = parseInt(hostLan);
+  const dispositivoLanComponent = redController.ecsManager.getComponentes(entidadHostLan)?.get(DispositivoComponent);
+  const nombreHostLan = dispositivoLanComponent?.nombre || hostLan;
+  const tipoHostLan = dispositivoLanComponent?.tipo as any;
+
+  const entidadZonaRemota = parseInt(dominioRemoto);
+  const zonaRemotaComponent = redController.ecsManager.getComponentes(entidadZonaRemota)?.get(ZonaComponent);
+  const nombreDominioRemoto = zonaRemotaComponent?.dominio || dominioRemoto;
+
+  const entidadHostRemoto = parseInt(hostRemoto);
+  const dispositivoRemotoComponent = redController.ecsManager.getComponentes(entidadHostRemoto)?.get(DispositivoComponent);
+  const nombreHostRemoto = dispositivoRemotoComponent?.nombre || hostRemoto;
+  const tipoHostRemoto = dispositivoRemotoComponent?.tipo as any;
+
+  return (
+    <div className={styles.configuracionItem}>
+      <div className={styles.dispositivoLocalIcon}>
+        {getIconoNodo(tipoHostLan)}
+      </div>
+      <div className={styles.configuracionDetalles}>
+        <div className={styles.configuracionField}>
+          <span className={styles.configLabel}>{nombreLanLocal}</span>
+          <span className={styles.configValue}>{nombreHostLan}</span>
+        </div>
+        <div className={styles.configuracionField} style={{ display: "flex", justifyContent: "center", flexDirection: "column", alignItems: "center" }}>
+          <span className={styles.configLabel}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+              <path fill="currentColor"
+                d="M16.15 13H5q-.425 0-.712-.288T4 12t.288-.712T5 11h11.15L13.3 8.15q-.3-.3-.288-.7t.288-.7q.3-.3.713-.312t.712.287L19.3 11.3q.15.15.213.325t.062.375t-.062.375t-.213.325l-4.575 4.575q-.3.3-.712.288t-.713-.313q-.275-.3-.288-.7t.288-.7z" />
+            </svg>
+          </span>
+          <span className={styles.configValue} style={{ marginTop: "-5px" }}>{proteccion}</span>
+        </div>
+        <div className={styles.configuracionField} style={{ textAlign: "right" }}>
+          <span className={styles.configLabel}>{nombreDominioRemoto}</span>
+          <span className={styles.configValue}>{nombreHostRemoto}</span>
+        </div>
+      </div>
+      <div className={styles.dispositivoRemotoIcon}>
+        {getIconoNodo(tipoHostRemoto)}
+      </div>
+      <button
+        className={styles.deleteButton}
+        title="Eliminar configuración"
+        onClick={() => onEliminar(index)}
+      >
+        <TrashIcon size={16} />
+      </button>
     </div>
   );
 }

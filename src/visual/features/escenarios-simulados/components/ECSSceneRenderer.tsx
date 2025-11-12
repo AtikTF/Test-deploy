@@ -77,7 +77,7 @@ const ECSSceneRenderer: React.FC = () => {
                 {
                     label: 'Configurar VPN',
                     onClick: () => {
-                        openModal(<ModalVPN />);
+                        openModal(<ModalVPN />, "Configuración de VPN Gateway");
                         setMenuOpenForEntity(null);
                     }
 

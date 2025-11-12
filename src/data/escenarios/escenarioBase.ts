@@ -101,7 +101,7 @@ export const escenarioBase: unknown = {
     {
       id: 1,
       nombre: "Edificio Principal - Piso 1",
-      domini: "Corporación",
+      dominio: "Corporación",
       redes: [
         {
           nombre: "LAN1",
