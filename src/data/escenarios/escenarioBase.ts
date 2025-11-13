@@ -82,6 +82,14 @@ export const escenarioBase: unknown = {
           nombre: "LAN2",
           color: ColoresRed.VERDE,
         },
+        {
+          nombre: "LAN3",
+          color: ColoresRed.AMARILLO,
+        },
+        {
+          nombre: "LAN4",
+          color: ColoresRed.GRIS_OSCURO,
+        },
       ],
       oficinas: [
         {
@@ -160,7 +168,7 @@ export const escenarioBase: unknown = {
               dispositivos: [
                 {
                   id: 1008, // ID Corregido (antes 1004)
-                  tipo: TipoDispositivo.VPN,
+                  tipo: TipoDispositivo.ROUTER,
                   nombre: "VPN Gateway",
                   sistemaOperativo: "VPN OS",
                   hardware: "Cisco VPN",

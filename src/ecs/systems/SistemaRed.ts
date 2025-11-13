@@ -42,6 +42,32 @@ export class SistemaRed extends Sistema {
     this.vpnService = null as any;
   }
 
+  /*
+  enviarActivo(
+    entidadEmisora: Entidad,
+    entidadReceptora: Entidad,
+    nombreActivo: string
+  ): void {
+    //encontrar el activo en el emisor por su id
+    const activoAEnviar = this.ecsManager
+      .getComponentes(entidadEmisora)
+      ?.get(ActivoComponent)
+      ?.activos.find((a) => a.nombre === nombreActivo);
+
+    // quitar el activo del emisor
+    this.ecsManager
+      .getComponentes(entidadEmisora)
+      ?.get(ActivoComponent)
+      ?.activos.filter((a) => a.nombre !== nombreActivo);
+
+    // agregar el activo al receptor
+    this.ecsManager
+      .getComponentes(entidadReceptora)
+      ?.get(ActivoComponent)
+      ?.activos.push(activoAEnviar!);
+  }
+ */
+
   // Inicializa servicios de forma lazy (solo la primera vez que se accede)
   private getEventoService(): EventoRedService {
     if (!this.eventoService) {
@@ -136,7 +162,7 @@ export class SistemaRed extends Sistema {
     entidadDestino: Entidad,
     protocolo: TipoProtocolo,
     payload: unknown
-  ): boolean {
+  ): void {
     const dispOrigen = this.ecsManager
       .getComponentes(entidadOrigen)
       ?.get(DispositivoComponent);
@@ -145,14 +171,8 @@ export class SistemaRed extends Sistema {
       ?.get(DispositivoComponent);
 
     if (!dispOrigen || !dispDestino) {
-      console.error(`❌ SistemaRed.enviarTrafico: Dispositivos no encontrados`);
-      return false;
+      return;
     }
-
-    console.log(
-      `🔄 SistemaRed.enviarTrafico: ${dispOrigen.nombre} → ${dispDestino.nombre} [${protocolo}]`
-    );
-
     if (
       !this.getConectividadService().estanConectados(
         entidadOrigen,
@@ -162,7 +182,7 @@ export class SistemaRed extends Sistema {
       console.log(
         `❌ SistemaRed.enviarTrafico: Dispositivos NO están conectados`
       );
-      return false;
+      return;
     }
 
     console.log(`✅ SistemaRed.enviarTrafico: Dispositivos ESTÁN conectados`);
@@ -177,7 +197,7 @@ export class SistemaRed extends Sistema {
       console.log(
         `❌ SistemaRed.enviarTrafico: Tráfico BLOQUEADO por firewall`
       );
-      return false;
+      return;
     }
 
     console.log(`✅ SistemaRed.enviarTrafico: Firewall PERMITIÓ el tráfico`);
@@ -216,7 +236,7 @@ export class SistemaRed extends Sistema {
       );
     }
 
-    return true;
+    return;
   }
 
   public toggleFirewall(entidadRouter: Entidad, habilitado: boolean): void {
