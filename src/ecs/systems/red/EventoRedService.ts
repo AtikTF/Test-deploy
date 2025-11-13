@@ -36,7 +36,7 @@ export class EventoRedService {
       const routerComponent = this.ecsManager
         .getComponentes(entidadRouter)
         ?.get(RouterComponent);
-      routerComponent?.logsFirewall.push(registro);
+      routerComponent?.logsTrafico.push(registro);
     }
   }
 
@@ -66,7 +66,7 @@ export class EventoRedService {
       const routerComponent = this.ecsManager
         .getComponentes(entidadRouter)
         ?.get(RouterComponent);
-      routerComponent?.logsFirewall.push(registro);
+      routerComponent?.logsTrafico.push(registro);
     }
   }
 

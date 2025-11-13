@@ -1,34 +1,19 @@
 import type { ECSManager } from "../../core/ECSManager";
 import {
   RouterComponent,
-  RedComponent,
   ZonaComponent,
   DispositivoComponent,
 } from "../../components";
 import type { Entidad } from "../../core/Componente";
-import { SistemaRelaciones } from "../SistemaRelaciones";
 
 export class ConectividadService {
   constructor(private ecsManager: ECSManager) {}
 
   public obtenerRedesDeZona(zonaEntidad: Entidad): Entidad[] {
-    const sistemasArray = Array.from(this.ecsManager.getSistemas().keys());
-    const sistemasRelaciones = sistemasArray.filter(
-      (s): s is SistemaRelaciones => s instanceof SistemaRelaciones
-    );
-    for (const sistema of sistemasRelaciones) {
-      const hijos = sistema.obtenerHijos(zonaEntidad);
-      if (hijos.length > 0) {
-        const primerHijo = this.ecsManager
-          .getComponentes(hijos[0])
-          ?.get(RedComponent);
-        if (primerHijo) {
-          return hijos;
-        }
-      }
-    }
-
-    return [];
+    const componentes = this.ecsManager
+      .getComponentes(zonaEntidad)
+      ?.get(ZonaComponent);
+    return componentes ? componentes.redes : [];
   }
 
   private obtenerRedesDelDispositivo(entidadDispositivo: Entidad): Entidad[] {
@@ -56,27 +41,12 @@ export class ConectividadService {
    * 3. Ambos en redes diferentes pero routers con internet → Conectados
    */
   estanConectados(entidadOrigen: Entidad, entidadDestino: Entidad): boolean {
-    /*
     
-        * Permitir tráfico por Internet entre distintas zonas
-            - El router debe ser el unico con acceso a Internet
-            - Se debe validar que ambas zonas tengan un router conectado a Internet.
-            
-
-        * Permitir tráfico entre distintas redes de misma zona ---- FINALIZADO
-            Escenario 1:	
-            - Los dispositivos están en distintas redes X
-            - Ambos deben estar conectados al mismo router X
-            
-            Escenario 2: 
-            - Ambos dispositivos están conectados en distintas redes y distintos router
-            - Estos dos routers están conectados por una misma red
-            - Se permite el trafico
-    */
 
     const redesOrigen = this.obtenerRedesDelDispositivo(entidadOrigen);
     const redesDestino = this.obtenerRedesDelDispositivo(entidadDestino);
-
+console.log("Redes Origen: ", redesOrigen);
+console.log("Redes Destino: ", redesDestino);
     // una de las dos ni siquiera tiene redes
 
     if (redesOrigen.length === 0 || redesDestino.length === 0) {
@@ -84,7 +54,9 @@ export class ConectividadService {
     }
 
     // Caso 1: Si comparten alguna red, están directamente conectados
+    console.log("Comparten red directa: ", this.compartanRed(entidadOrigen, entidadDestino));
     if (this.compartanRed(entidadOrigen, entidadDestino)) {
+     
       return true;
     }
 
@@ -107,6 +79,7 @@ export class ConectividadService {
       return true;
     }
 
+
     routersOrigen.forEach((routerO, index) => {
       console.log("Router Origen ", index);
       console.log(
@@ -124,7 +97,36 @@ export class ConectividadService {
       );
     });
     //
+    console.log("No hay routers en comun");
+    const redesCola: Entidad[] = [...redesOrigen];
+    const redesVisitadas = new Set<Entidad>(redesOrigen);
+    console.log("Redes en cola inicial: ", redesCola);
+    console.log("Redes visitadas inicial: ", redesVisitadas);
+    let i =0;
+    while (i < redesCola.length) {
+      console.log("Redes en cola: ", redesCola);
+      console.log("Redes visitadas: ", redesVisitadas);
+      const redActual = redesCola[i++];
+      console.log("Red actual: ", redActual);
+      const routersEnRed = this.buscarRoutersEnRed(redActual);
+      console.log("Routers en red actual: ", routersEnRed);
 
+      for (const routerEntidad of routersEnRed) {
+        const redesDelRouter = this.obtenerRedesDelDispositivo(routerEntidad);
+        console.log("Redes del router: ", redesDelRouter);
+        for (const nuevaRed of redesDelRouter) {
+          if (redesDestino.includes(nuevaRed)) {
+            console.log("Se encontró una red destino: ", nuevaRed);
+            return true;
+          }
+          if (!redesVisitadas.has(nuevaRed)) {
+            console.log("Agregando nueva red a visitar: ", nuevaRed);
+            redesVisitadas.add(nuevaRed);
+            redesCola.push(nuevaRed);
+          }
+        }
+      }
+    }
     return false;
   }
 
@@ -158,59 +160,168 @@ export class ConectividadService {
 
     return routersConectados;
   }
+  private buscarRoutersEnRed(redId: Entidad): Entidad[] {
+  const routersEnRed: Entidad[] = [];
 
-  //   buscarRouterConDispositivo(
-  //     entidadDispositivo: Entidad
-  //   ): { router: RouterComponent; zonaId: Entidad } | null {
-  //     // 1. Obtener las redes del dispositivo
-  //     const redesDelDispositivo =
-  //       this.obtenerRedesDelDispositivo(entidadDispositivo);
-  //     if (redesDelDispositivo.length === 0) return null;
+  this.ecsManager.getEntidades().forEach((container, entidad) => {
+    // Verificar si la entidad es un router
+    if (container.tiene(RouterComponent)) {
+      // Obtener las redes de este router
+      const redesDelRouter = this.obtenerRedesDelDispositivo(entidad);
+      
+      // Si el router está conectado a la red que buscamos, lo añadimos
+      if (redesDelRouter.includes(redId)) {
+        routersEnRed.push(entidad);
+      }
+    }
+  });
 
-  //     // 2. Encontrar la zona que contiene alguna de estas redes
-  //     for (const [zonaEntidad, container] of this.ecsManager.getEntidades()) {
-  //       const zona = container.get(ZonaComponent);
-  //       if (!zona) continue;
+  return routersEnRed;
+}
 
-  //       // Obtener las redes de esta zona usando SistemaRelaciones
-  //       const redesZona = this.obtenerRedesDeZona(zonaEntidad);
+     buscarRouterConDispositivo(
+      entidadDispositivo: Entidad
+     ): { router: RouterComponent; zonaId: Entidad } | null {
+       // 1. Obtener las redes del dispositivo
+       const redesDelDispositivo =
+         this.obtenerRedesDelDispositivo(entidadDispositivo);
+      if (redesDelDispositivo.length === 0) return null;
 
-  //       // Verificar si la zona contiene alguna red del dispositivo
-  //       const zonaContieneDispositivo = redesZona.some((redId) =>
-  //         redesDelDispositivo.includes(redId)
-  //       );
+      // 2. Encontrar la zona que contiene alguna de estas redes
+      for (const [zonaEntidad, container] of this.ecsManager.getEntidades()) {
+        const zona = container.get(ZonaComponent);
+        if (!zona) continue;
 
-  //       if (!zonaContieneDispositivo) continue;
+       // Obtener las redes de esta zona usando SistemaRelaciones
+      const redesZona = this.obtenerRedesDeZona(zonaEntidad);
 
-  //       // 3. Buscar el router en esta zona
-  //       // El router es un dispositivo que tiene redes de esta zona
-  //       for (const [
-  //         routerEntidad,
-  //         routerContainer,
-  //       ] of this.ecsManager.getEntidades()) {
-  //         const router = routerContainer.get(RouterComponent);
-  //         if (!router) continue;
+         const zonaContieneDispositivo = redesZona.some((redId) =>
+         redesDelDispositivo.includes(redId)
+        );
+         if (!zonaContieneDispositivo) continue;
 
-  //         // Verificar si este router tiene redes de esta zona
-  //         const redesRouter = this.obtenerRedesDelDispositivo(routerEntidad);
-  //         const routerEnZona = redesRouter.some((redId) =>
-  //           redesZona.includes(redId)
-  //         );
-  //         if (routerEnZona) {
-  //           return { router, zonaId: zonaEntidad };
-  //         }
-  //       }
-  //     }
+       // 3. Buscar el router en esta zona DENTRO DE LA ZONA
+ 
+        for (const [
+           routerEntidad,
+          routerContainer,
+        ] of this.ecsManager.getEntidades()) {
+          const router = routerContainer.get(RouterComponent);
+          if (!router) continue;
 
-  //     return null;
-  //   }
+           // Verificar si este router tiene redes de esta zona
+          const redesRouter = this.obtenerRedesDelDispositivo(routerEntidad);
+          const routerConectadoAlDispositivo = redesRouter.some((redRouterID) =>
+            redesDelDispositivo.includes(redRouterID) 
+          );
+          if (routerConectadoAlDispositivo){
+            return { router, zonaId: zonaEntidad };
 
-  obtenerRoutersDeRed(
-    entidadDisp1: Entidad,
-    entidadDisp2: Entidad
-  ): RouterComponent[] {
-    const routersAplicables: RouterComponent[] = [];
+          } ;
+        }
+     }
 
-    return routersAplicables;
-  }
+       return null;
+    }
+
+  obtenerRoutersDeRed(entidadDisp1: Entidad, entidadDisp2: Entidad): RouterComponent[] {
+        const routersAplicables: RouterComponent[] = [];
+        
+        if (this.compartanRed(entidadDisp1, entidadDisp2)) {
+            const routerInfo = this.buscarRouterConDispositivo(entidadDisp1);
+            if (routerInfo) {
+                routersAplicables.push(routerInfo.router);
+            }
+            return routersAplicables;
+        }
+        
+        const routerDisp1Info = this.buscarRouterConDispositivo(entidadDisp1);
+        const routerDisp2Info = this.buscarRouterConDispositivo(entidadDisp2);
+        
+        if (routerDisp1Info) {
+        routersAplicables.push(routerDisp1Info.router);
+    }
+    if (routerDisp2Info) {
+        
+        const esMismoRouter = routerDisp1Info && 
+                              routerDisp1Info.router === routerDisp2Info.router; 
+
+        if (!esMismoRouter) {
+            routersAplicables.push(routerDisp2Info.router);
+        }
+    }
+        
+        return routersAplicables;
+    }
+
+   obtenerRutaRouters(entidadOrigen: Entidad, entidadDestino: Entidad): Entidad[] | null {
+    const redesOrigen = this.obtenerRedesDelDispositivo(entidadOrigen);
+    const redesDestino = this.obtenerRedesDelDispositivo(entidadDestino);
+
+    if (redesOrigen.length === 0 || redesDestino.length === 0) {
+        return null;
+    }
+    
+    // Caso de la misma red (No hay routers intermedios, el tráfico es local)
+    if (this.compartanRed(entidadOrigen, entidadDestino)) {
+        return [];
+    }
+
+    // Mapa de Red -> { redPrevia, routerQueConecta } para reconstruir la ruta.
+    const mapaRuta = new Map<Entidad, { redPrevia: Entidad | null; router: Entidad }>();
+    const redesCola: Entidad[] = [...redesOrigen];
+    const redesVisitadas = new Set<Entidad>(redesOrigen);
+    
+    // Inicializar el mapa para las redes de origen
+    redesOrigen.forEach(red => mapaRuta.set(red, { redPrevia: null, router: -1 })); // Usar -1 o null para router inicial
+
+    while (redesCola.length > 0) {
+        const redActual = redesCola.shift()!;
+        
+        const routersEnRed = this.buscarRoutersEnRed(redActual);
+
+        for (const routerEntidad of routersEnRed) {
+            const redesDelRouter = this.obtenerRedesDelDispositivo(routerEntidad);
+            
+            for (const nuevaRed of redesDelRouter) {
+                if (redesDestino.includes(nuevaRed)) {
+                    // Registrar la conexión final
+                    mapaRuta.set(nuevaRed, { redPrevia: redActual, router: routerEntidad });
+                    return this.reconstruirRutaRouters( entidadDestino, mapaRuta);
+                }
+                
+                if (!redesVisitadas.has(nuevaRed)) {
+                    redesVisitadas.add(nuevaRed);
+                    mapaRuta.set(nuevaRed, { redPrevia: redActual, router: routerEntidad });
+                    redesCola.push(nuevaRed);
+                }
+            }
+        }
+    }
+    
+    return null; // No hay ruta
+}
+reconstruirRutaRouters( entidadDestino: Entidad, mapaRuta: Map<Entidad, { redPrevia: Entidad | null; router: Entidad }>): Entidad[] {
+    const redesDestino = this.obtenerRedesDelDispositivo(entidadDestino);
+    
+    // 1. Encontrar el punto de partida en el mapa (cualquier red destino que esté en el mapa)
+    let redActual = redesDestino.find(red => mapaRuta.has(red))!;
+    const rutaRouters: Entidad[] = [];
+    const routersAgregados = new Set<Entidad>(); // Para evitar duplicados (p. ej., R1 -> Internet -> R1)
+
+    // 2. Reconstruir la ruta hacia atrás
+    while (mapaRuta.get(redActual)?.redPrevia !== null) {
+        const info = mapaRuta.get(redActual)!;
+        
+        // Agregar el router que llevó a esta red
+        if (!routersAgregados.has(info.router)) {
+            rutaRouters.unshift(info.router); // Añadir al inicio para mantener el orden (Origen -> Destino)
+            routersAgregados.add(info.router);
+        }
+        
+        redActual = info.redPrevia!;
+    }
+
+    return rutaRouters;
+} 
 }

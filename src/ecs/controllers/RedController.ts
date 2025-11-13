@@ -1,16 +1,17 @@
 import { TipoDispositivo } from "../../types/DeviceEnums";
 import type { PerfilClienteVPN, PerfilVPNGateway } from "../../types/EscenarioTypes";
 import { EventosRed, EventosVPN } from "../../types/EventosEnums";
+import { AccionFirewall } from "../../types/FirewallTypes";
 import type {
   DireccionTrafico,
-  ConfiguracionFirewall,
+  Reglas,
 } from "../../types/FirewallTypes";
 import { TipoProtocolo } from "../../types/TrafficEnums";
 import { ClienteVPNComponent, DispositivoComponent, RouterComponent, VPNGatewayComponent } from "../components";
 import type { ECSManager } from "../core";
 import type { Entidad } from "../core/Componente";
 import { SistemaEvento, SistemaJerarquiaEscenario, SistemaRed } from "../systems";
-import { TransferenciaService } from "../systems/red";
+import { RedDisponibilidadService, TransferenciaService } from "../systems/red";
 
 export class RedController {
   public ecsManager: ECSManager;
@@ -19,6 +20,7 @@ export class RedController {
   private sistemaEvento?: SistemaEvento;
   private sistemaJerarquia?: SistemaJerarquiaEscenario;
   private transferenciaService?: TransferenciaService;
+  private redDisponibilidadService?: RedDisponibilidadService;
 
   private static instance: RedController | null = null;
 
@@ -57,6 +59,10 @@ export class RedController {
 
     if (!this.transferenciaService) {
       this.transferenciaService = new TransferenciaService(this.ecsManager);
+    }
+
+    if (!this.redDisponibilidadService) {
+      this.redDisponibilidadService = new RedDisponibilidadService(this.ecsManager);
     }
 
     this.ecsManager.on(EventosRed.RED_ENVIAR_ACTIVO, (data: unknown) => {
@@ -132,10 +138,16 @@ export class RedController {
   }
 
   public asignarRed(entidadDisp: Entidad, entidadRed: Entidad): void {
-    if (!this.sistemaRed) {
+    if (!this.sistemaRed || !this.redDisponibilidadService) {
       console.error("Sistema de red no inicializado");
       return;
     }
+
+    // Validar si el dispositivo puede conectarse a esta red
+    if (!this.redDisponibilidadService.puedeConectarseARed(entidadDisp, entidadRed)) {
+      return;
+    }
+
     this.sistemaRed.asignarRed(entidadDisp, entidadRed);
   }
 
@@ -147,22 +159,18 @@ export class RedController {
     this.sistemaRed.removerRed(entidadDisp, entidadRed);
   }
 
-  public toggleActivacionFirewall(
-    entidadRouter: Entidad,
-    habilitado: boolean
-  ): void {
-    if (!this.sistemaRed) {
-      console.error("Sistema de red no inicializado");
-      return;
-    }
-
-    this.sistemaRed.toggleFirewall(entidadRouter, habilitado);
+  public obtenerRedesDisponibles(entidadDisp: Entidad): Entidad[] {
+    if (!this.redDisponibilidadService) return [];
+    return this.redDisponibilidadService.obtenerRedesDisponibles(entidadDisp);
   }
+
+  // ==================== MÉTODOS DE FIREWALL ====================
 
   public agregarReglaFirewall(
     entidadRouter: Entidad,
+    entidadRed: Entidad,
     protocolo: TipoProtocolo,
-    accion: "PERMITIR" | "DENEGAR",
+    accion: AccionFirewall,
     direccion: DireccionTrafico
   ): void {
     if (!this.sistemaRed) {
@@ -171,67 +179,35 @@ export class RedController {
     }
     this.sistemaRed.agregarReglaFirewall(
       entidadRouter,
+      entidadRed,
       protocolo,
       accion,
       direccion
     );
   }
 
-  public agregarExcepcionFirewall(
+
+  public bloquearProtocolosEnRed(
     entidadRouter: Entidad,
-    protocolo: TipoProtocolo,
-    entidadDispositivo: Entidad,
-    accion: "PERMITIR" | "DENEGAR",
+    entidadRed: Entidad,
+    protocolos: TipoProtocolo[],
     direccion: DireccionTrafico
   ): void {
     if (!this.sistemaRed) {
       console.error("Sistema de red no inicializado");
       return;
     }
-    this.sistemaRed.agregarExcepcionFirewall(
+    this.sistemaRed.bloquearProtocolosEnRed(
       entidadRouter,
-      protocolo,
-      entidadDispositivo,
-      accion,
+      entidadRed,
+      protocolos,
       direccion
     );
   }
 
-  public setPoliticaFirewall(
+  public permitirProtocolosEnRed(
     entidadRouter: Entidad,
-    politica: "PERMITIR" | "DENEGAR"
-  ): void {
-    if (!this.sistemaRed) {
-      console.error("Sistema de red no inicializado");
-      return;
-    }
-    this.sistemaRed.setPoliticaFirewall(entidadRouter, politica);
-  }
-
-  public setPoliticaFirewallSaliente(
-    entidadRouter: Entidad,
-    politica: "PERMITIR" | "DENEGAR"
-  ): void {
-    if (!this.sistemaRed) {
-      console.error("Sistema de red no inicializado");
-      return;
-    }
-    this.sistemaRed.setPoliticaFirewallSaliente(entidadRouter, politica);
-  }
-
-  public setPoliticaFirewallEntrante(
-    entidadRouter: Entidad,
-    politica: "PERMITIR" | "DENEGAR"
-  ): void {
-    if (!this.sistemaRed) {
-      console.error("Sistema de red no inicializado");
-      return;
-    }
-    this.sistemaRed.setPoliticaFirewallEntrante(entidadRouter, politica);
-  }
-
-  public bloquearTodosProtocolos(
-    entidadRouter: Entidad,
+    entidadRed: Entidad,
     protocolos: TipoProtocolo[],
     direccion: DireccionTrafico
   ): void {
@@ -239,55 +215,51 @@ export class RedController {
       console.error("Sistema de red no inicializado");
       return;
     }
-    protocolos.forEach((protocolo) => {
-      this.sistemaRed!.agregarReglaFirewall(
-        entidadRouter,
-        protocolo,
-        "DENEGAR",
-        direccion
-      );
-    });
+    this.sistemaRed.permitirProtocolosEnRed(
+      entidadRouter,
+      entidadRed,
+      protocolos,
+      direccion
+    );
   }
 
-  public permitirTodosProtocolos(
+
+  public obtenerReglasDeRed(entidadRouter: Entidad, entidadRed: Entidad): Reglas[] {
+    if (!this.sistemaRed) {
+      console.error("Sistema de red no inicializado");
+      return [];
+    }
+    return this.sistemaRed.obtenerReglasDeRed(entidadRouter, entidadRed);
+  }
+
+
+  public eliminarReglaFirewall(
     entidadRouter: Entidad,
-    protocolos: TipoProtocolo[],
+    entidadRed: Entidad,
+    protocolo: TipoProtocolo,
     direccion: DireccionTrafico
   ): void {
     if (!this.sistemaRed) {
       console.error("Sistema de red no inicializado");
       return;
     }
-    protocolos.forEach((protocolo) => {
-      this.sistemaRed!.agregarReglaFirewall(
-        entidadRouter,
-        protocolo,
-        "PERMITIR",
-        direccion
-      );
-    });
+    this.sistemaRed.eliminarReglaFirewall(
+      entidadRouter,
+      entidadRed,
+      protocolo,
+      direccion
+    );
   }
 
-  public toggleConexionInternet(
-    entidadRouter: Entidad,
-    conectado: boolean
-  ): void {
-    if (!this.sistemaRed) {
-      console.error("Sistema de red no inicializado");
-      return;
-    }
-    this.sistemaRed.setConectadoAInternet(entidadRouter, conectado);
+ 
+  public obtenerLogsTrafico(entidadRouter: Entidad): any[] {
+    const router = this.obtenerRouter(entidadRouter);
+    return router?.logsTrafico || [];
   }
 
-  public obtenerConfiguracionFirewall(
-    entidadRouter: Entidad
-  ): ConfiguracionFirewall | null {
-    const container = this.ecsManager.getComponentes(entidadRouter);
-    const routerComponent = container?.get(RouterComponent);
-    return routerComponent?.firewall || null;
-  }
+  // ==================== FIN MÉTODOS DE FIREWALL ====================
 
-  public obtenerRouter(entidadRouter: Entidad): RouterComponent | null {
+  private obtenerRouter(entidadRouter: Entidad): RouterComponent | null {
     const container = this.ecsManager.getComponentes(entidadRouter);
     return container?.get(RouterComponent) || null;
   }

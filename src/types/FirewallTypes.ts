@@ -1,30 +1,21 @@
 import type { TipoProtocolo } from "./TrafficEnums";
 
 
-export type AccionFirewall = 'PERMITIR' | 'DENEGAR';
+export enum AccionFirewall {
+    PERMITIR = 'PERMITIR',
+    DENEGAR = 'DENEGAR'
+}
 
 
-export type DireccionTrafico = 'SALIENTE' | 'ENTRANTE' | 'AMBAS';
+export enum DireccionTrafico {
+    SALIENTE = 'SALIENTE',
+    ENTRANTE = 'ENTRANTE',
+    AMBAS = 'AMBAS'
+}
 
-
-export interface ReglaGlobal {
+export interface Reglas {
     accion: AccionFirewall;
     direccion: DireccionTrafico;
+    protocolo: TipoProtocolo;
 }
 
-
-export interface ReglaDispositivo {
-    nombreDispositivo: string;
-    accion: AccionFirewall;
-    direccion: DireccionTrafico;
-}
-
-
-export interface ConfiguracionFirewall {
-    habilitado: boolean;
-    politicaPorDefecto: AccionFirewall;
-    politicaPorDefectoSaliente?: AccionFirewall; 
-    politicaPorDefectoEntrante?: AccionFirewall; 
-    reglasGlobales: Map<TipoProtocolo, ReglaGlobal[]>; 
-    excepciones: Map<TipoProtocolo, ReglaDispositivo[]>;
-}

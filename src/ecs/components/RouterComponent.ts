@@ -1,12 +1,13 @@
 import { Componente } from "../core";
-import type { ConfiguracionFirewall } from "../../types/FirewallTypes";
+import type { Entidad } from "../core/Componente";
+import type { Reglas } from "../../types/FirewallTypes";
 
 export class RouterComponent extends Componente {
-  constructor(
-    public conectadoAInternet: boolean,
-    public firewall: ConfiguracionFirewall,
-    public logsFirewall: any[] = []
-  ) {
-    super();
-  }
+    constructor(
+        public bloqueosFirewall: Map<Entidad, Reglas[]> = new Map(),
+        public logsTrafico: any[] = []
+    ) {
+        super();
+    }
 }
+

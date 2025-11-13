@@ -5,7 +5,8 @@ import {
 } from "../components";
 import { Sistema, type Entidad } from "../core";
 import { TipoProtocolo } from "../../types/TrafficEnums";
-import type { DireccionTrafico } from "../../types/FirewallTypes";
+import { AccionFirewall } from "../../types/FirewallTypes";
+import type { DireccionTrafico, Reglas } from "../../types/FirewallTypes";
 import { EventosRed } from "../../types/EventosEnums";
 import {
   ConectividadService,
@@ -87,7 +88,6 @@ export class SistemaRed extends Sistema {
     if (!this.firewallService) {
       this.firewallService = new FirewallService(
         this.getConectividadService(),
-        this.getEventoService(),
         this.ecsManager
       );
     }
@@ -239,101 +239,61 @@ export class SistemaRed extends Sistema {
     return;
   }
 
-  public toggleFirewall(entidadRouter: Entidad, habilitado: boolean): void {
-    this.getFirewallConfigService().toggleFirewall(entidadRouter, habilitado);
-  }
-
   public agregarReglaFirewall(
     entidadRouter: Entidad,
+    entidadRed: Entidad,
     protocolo: TipoProtocolo,
-    accion: "PERMITIR" | "DENEGAR",
+    accion: AccionFirewall,
     direccion: DireccionTrafico
   ): void {
     this.getFirewallConfigService().agregarReglaFirewall(
       entidadRouter,
+      entidadRed,
       protocolo,
       accion,
       direccion
     );
   }
 
-  public agregarExcepcionFirewall(
+  public bloquearProtocolosEnRed(
     entidadRouter: Entidad,
-    protocolo: TipoProtocolo,
-    entidadDispositivo: Entidad,
-    accion: "PERMITIR" | "DENEGAR",
+    entidadRed: Entidad,
+    protocolos: TipoProtocolo[],
     direccion: DireccionTrafico
   ): void {
-    this.getFirewallConfigService().agregarExcepcionFirewall(
+    this.getFirewallConfigService().bloquearProtocolosEnRed(
       entidadRouter,
-      protocolo,
-      entidadDispositivo,
-      accion,
+      entidadRed,
+      protocolos,
       direccion
     );
   }
 
-  public setPoliticaFirewall(
+  public permitirProtocolosEnRed(
     entidadRouter: Entidad,
-    politica: "PERMITIR" | "DENEGAR"
+    entidadRed: Entidad,
+    protocolos: TipoProtocolo[],
+    direccion: DireccionTrafico
   ): void {
-    this.getFirewallConfigService().setPoliticaFirewall(
+    this.getFirewallConfigService().permitirProtocolosEnRed(
       entidadRouter,
-      politica
+      entidadRed,
+      protocolos,
+      direccion
     );
   }
 
-  public setPoliticaFirewallSaliente(
-    entidadRouter: Entidad,
-    politica: "PERMITIR" | "DENEGAR"
-  ): void {
-    this.getFirewallConfigService().setPoliticaFirewallSaliente(
-      entidadRouter,
-      politica
-    );
+  public obtenerReglasDeRed(entidadRouter: Entidad, entidadRed: Entidad): Reglas[] {
+    return this.getFirewallConfigService().obtenerReglasDeRed(entidadRouter, entidadRed);
   }
 
-  public setPoliticaFirewallEntrante(
+  public eliminarReglaFirewall(
     entidadRouter: Entidad,
-    politica: "PERMITIR" | "DENEGAR"
+    entidadRed: Entidad,
+    protocolo: TipoProtocolo,
+    direccion: DireccionTrafico
   ): void {
-    this.getFirewallConfigService().setPoliticaFirewallEntrante(
-      entidadRouter,
-      politica
-    );
-  }
-
-  public setConectadoAInternet(
-    entidadRouter: Entidad,
-    conectado: boolean
-  ): void {
-    const router = this.ecsManager
-      .getComponentes(entidadRouter)
-      ?.get(RouterComponent);
-    const dispositivo = this.ecsManager
-      .getComponentes(entidadRouter)
-      ?.get(DispositivoComponent);
-
-    if (!router || !dispositivo) {
-      console.error(`Router con entidad "${entidadRouter}" no encontrado`);
-      return;
-    }
-
-    const estadoAnterior = router.conectadoAInternet;
-    router.conectadoAInternet = conectado;
-    if (estadoAnterior !== conectado) {
-      const evento = conectado
-        ? EventosRed.INTERNET_CONECTADO
-        : EventosRed.INTERNET_DESCONECTADO;
-      this.ecsManager.emit(evento, {
-        router: dispositivo.nombre,
-        conectado,
-        mensaje: `Router "${dispositivo.nombre}" ${
-          conectado ? "conectado a" : "desconectado de"
-        } Internet`,
-        tipo: conectado ? "INTERNET_CONECTADO" : "INTERNET_DESCONECTADO",
-      });
-    }
+    this.getFirewallConfigService().eliminarRegla(entidadRouter, entidadRed, protocolo, direccion);
   }
 
   public obtenerRedesDeRouter(entidadRouter: Entidad): Entidad[] {
@@ -343,11 +303,7 @@ export class SistemaRed extends Sistema {
     return dispositivo?.redes || [];
   }
 
-  /**
-   * Obtiene todos los dispositivos que están conectados a una red específica
-   * @param entidadRed - La entidad de la red
-   * @returns Array de entidades de dispositivos conectados a la red
-   */
+
   public obtenerDispositivosPorRed(entidadRed: Entidad): Entidad[] {
     const dispositivos: Entidad[] = [];
 

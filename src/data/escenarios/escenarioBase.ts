@@ -90,6 +90,10 @@ export const escenarioBase: unknown = {
           nombre: "LAN4",
           color: ColoresRed.GRIS_OSCURO,
         },
+        {
+          nombre: "Internet",
+          color: ColoresRed.ROJO,
+        }
       ],
       oficinas: [
         {
@@ -156,8 +160,7 @@ export const escenarioBase: unknown = {
                   software: "Routing, Firewall",
                   posicion: { x: 1.5, y: 0, z: 2, rotacionY: 180 },
                   // --- Feature 2: Objetivo de configuración de Firewall ---
-                  conectadoAInternet: true,
-                  redes: ["LAN1"],
+                  redes: ["LAN1","Internet"],
                 },
               ],
             },
@@ -175,7 +178,6 @@ export const escenarioBase: unknown = {
                   software: "VPN",
                   posicion: { x: -4, y: 0, z: 3, rotacionY: 180 },
                   // --- Feature 3: Objetivo de configuración de VPN Gateway ---
-                  conectadoAInternet: true,
                   redes: ["LAN2"],
                 },
               ],
@@ -192,6 +194,10 @@ export const escenarioBase: unknown = {
         {
           nombre: "RedWWW",
           color: ColoresRed.NARANJA,
+        },
+        {
+          nombre: "Internet",
+          color: ColoresRed.ROJO,
         },
       ],
       oficinas: [
@@ -233,8 +239,7 @@ export const escenarioBase: unknown = {
                   hardware: "Cisco ASR 1001-X",
                   software: "Routing, Firewall, NAT",
                   posicion: { x: 2, y: 0, z: 0, rotacionY: 180 },
-                  conectadoAInternet: true,
-                  redes: ["RedWWW"],
+                  redes: ["RedWWW", "Internet"],
                 },
               ],
             },
@@ -250,6 +255,10 @@ export const escenarioBase: unknown = {
         {
           nombre: "Red-Lisa",
           color: ColoresRed.INDIGO,
+        },
+        {
+          nombre: "Internet",
+          color: ColoresRed.ROJO,
         },
       ],
       oficinas: [
@@ -291,8 +300,7 @@ export const escenarioBase: unknown = {
                   hardware: "Cisco ASR 1001-X",
                   software: "Routing, Firewall, NAT",
                   posicion: { x: 2, y: 0, z: 0, rotacionY: 180 },
-                  conectadoAInternet: true,
-                  redes: ["Red-Lisa"],
+                  redes: ["Red-Lisa", "Internet"],
                 },
               ],
             },

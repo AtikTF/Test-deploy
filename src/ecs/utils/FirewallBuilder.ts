@@ -1,104 +1,79 @@
-import type { ConfiguracionFirewall, AccionFirewall, ReglaDispositivo, DireccionTrafico, ReglaGlobal } from '../../types/FirewallTypes';
+import { AccionFirewall, DireccionTrafico } from '../../types/FirewallTypes';
+import type { Reglas } from '../../types/FirewallTypes';
 import type { TipoProtocolo } from '../../types/TrafficEnums';
+import type { Entidad } from '../core/Componente';
 
 
 export class FirewallBuilder {
-  private config: ConfiguracionFirewall;
-
+  private bloqueosFirewall: Map<Entidad, Reglas[]>;
 
   constructor() {
-    this.config = {
-      habilitado: true,
-      politicaPorDefecto: 'PERMITIR',
-      reglasGlobales: new Map(),
-      excepciones: new Map()
-    };
+    this.bloqueosFirewall = new Map();
   }
 
-  //Habilita o deshabilita el firewall
-  setHabilitado(habilitado: boolean): this {
-    this.config.habilitado = habilitado;
-    return this;
-  }
-
-  //Establece la política por defecto (aplicada cuando no hay reglas específicas) 
-  setPoliticaPorDefecto(politica: AccionFirewall): this {
-    this.config.politicaPorDefecto = politica;
-    return this;
-  }
-  //Establece política cuando se deniega TODO tráfico saliente
-  setPoliticaSaliente(politica: AccionFirewall): this {
-    this.config.politicaPorDefectoSaliente = politica;
-    return this;
-  }
-
-//Establece política cuando se deniega TODO tráfico entrante
-  setPoliticaEntrante(politica: AccionFirewall): this {
-    this.config.politicaPorDefectoEntrante = politica;
+ 
+  agregarRegla(
+    entidadRed: Entidad,
+    protocolo: TipoProtocolo,
+    accion: AccionFirewall,
+    direccion: DireccionTrafico
+  ): this {
+    const reglasExistentes = this.bloqueosFirewall.get(entidadRed) || [];
+    const nuevaRegla: Reglas = { accion, direccion, protocolo };
+    this.bloqueosFirewall.set(entidadRed, [...reglasExistentes, nuevaRegla]);
     return this;
   }
 
 
-  agregarReglasGlobales(
-    protocolos: TipoProtocolo[], 
+  agregarReglas(
+    entidadRed: Entidad,
+    protocolos: TipoProtocolo[],
     accion: AccionFirewall,
     direccion: DireccionTrafico
   ): this {
     protocolos.forEach(protocolo => {
-      const reglasExistentes = this.config.reglasGlobales.get(protocolo) || [];
-      const nuevaRegla: ReglaGlobal = { accion, direccion };
-      this.config.reglasGlobales.set(protocolo, [...reglasExistentes, nuevaRegla]);
+      this.agregarRegla(entidadRed, protocolo, accion, direccion);
     });
     return this;
   }
 
-  agregarReglaGlobal(
-    protocolo: TipoProtocolo, 
-    accion: AccionFirewall,
+  bloquearProtocolos(
+    entidadRed: Entidad,
+    protocolos: TipoProtocolo[],
     direccion: DireccionTrafico
   ): this {
-    const reglasExistentes = this.config.reglasGlobales.get(protocolo) || [];
-    const nuevaRegla: ReglaGlobal = { accion, direccion };
-    this.config.reglasGlobales.set(protocolo, [...reglasExistentes, nuevaRegla]);
-    return this;
+    return this.agregarReglas(entidadRed, protocolos, AccionFirewall.DENEGAR, direccion);
+  }
+
+
+  bloquearTodoSaliente(entidadRed: Entidad, protocolos: TipoProtocolo[]): this {
+    return this.bloquearProtocolos(entidadRed, protocolos, DireccionTrafico.SALIENTE);
   }
 
   
-  agregarExcepciones(
-    protocolo: TipoProtocolo, 
-    dispositivos: string[], 
-    accion: AccionFirewall,
-    direccion: DireccionTrafico
-  ): this {
-    const reglasExistentes = this.config.excepciones.get(protocolo) || [];
-    const nuevasReglas: ReglaDispositivo[] = dispositivos.map(nombre => ({
-      nombreDispositivo: nombre,
-      accion,
-      direccion
-    }));
-    
-    this.config.excepciones.set(protocolo, [...reglasExistentes, ...nuevasReglas]);
+  bloquearTodoEntrante(entidadRed: Entidad, protocolos: TipoProtocolo[]): this {
+    return this.bloquearProtocolos(entidadRed, protocolos, DireccionTrafico.ENTRANTE);
+  }
+
+ 
+  bloquearTodo(entidadRed: Entidad, protocolos: TipoProtocolo[]): this {
+    return this.bloquearProtocolos(entidadRed, protocolos, DireccionTrafico.AMBAS);
+  }
+
+ 
+  limpiarRed(entidadRed: Entidad): this {
+    this.bloqueosFirewall.delete(entidadRed);
     return this;
   }
 
-
-  agregarExcepcion(
-    protocolo: TipoProtocolo, 
-    dispositivo: string, 
-    accion: AccionFirewall,
-    direccion: DireccionTrafico
-  ): this {
-    const reglasExistentes = this.config.excepciones.get(protocolo) || [];
-    const nuevaRegla: ReglaDispositivo = {
-      nombreDispositivo: dispositivo,
-      accion,
-      direccion
-    };
-    
-    this.config.excepciones.set(protocolo, [...reglasExistentes, nuevaRegla]);
+ 
+  limpiarTodo(): this {
+    this.bloqueosFirewall.clear();
     return this;
   }
-  build(): ConfiguracionFirewall {
-    return this.config;
+
+ 
+  build(): Map<Entidad, Reglas[]> {
+    return new Map(this.bloqueosFirewall);
   }
 }

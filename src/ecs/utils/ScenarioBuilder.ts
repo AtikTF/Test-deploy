@@ -1,4 +1,5 @@
 import { ECSManager } from "../core/ECSManager";
+import { ColoresRed } from "../../data/colores";
 import {
   Transform,
   DispositivoComponent,
@@ -73,19 +74,54 @@ export class ScenarioBuilder {
       this.crearFase(fase);
     });
 
+    // Crear la red Internet UNA SOLA VEZ como red global
+    const entidadRedInternet = this.ecsManager.agregarEntidad();
+    this.ecsManager.agregarComponente(
+      entidadRedInternet,
+      new RedComponent("Internet", ColoresRed.ROJO)
+    );
+
+    // Crear sistema de relaciones Zona-Red UNA SOLA VEZ
+    const relacionZonaRed = new SistemaRelaciones(
+      ZonaComponent,
+      RedComponent,
+      "redes"
+    );
+    this.ecsManager.agregarSistema(relacionZonaRed);
+
     escenario.zonas.forEach((zona: unknown) => {
       const zonaEntidad = this.crearZona(zona, escenarioPadre);
-      const z = zona as { oficinas?: unknown[]; redes?: unknown[] };
+      const z = zona as { oficinas?: unknown[]; redes?: unknown[]; nombre?: string };
+      
+      // Verificar si la zona tiene routers
+      const tieneRouters = this.zonaTieneRouters(z);
+
+      
       let redesConEntidades = new Map<
         Entidad,
         { nombre: string; color: string }
       >();
+
+      // Procesar redes de la zona
       (z.redes ?? []).forEach((red) => {
-        const entidadRed = this.ecsManager.agregarEntidad();
         const r = red as { nombre: string; color: string };
-        redesConEntidades.set(entidadRed, r);
-        this.crearRed(zonaEntidad, entidadRed, red);
+        
+        // Si la red es "Internet", verificar que la zona tenga routers
+        if (r.nombre === "Internet") {
+          if (!tieneRouters) {
+            return; // Saltar esta red
+          }
+          redesConEntidades.set(entidadRedInternet, r);
+          // Agregar relación entre esta zona e Internet usando el sistema ya creado
+          relacionZonaRed.agregar(zonaEntidad, entidadRedInternet);
+        } else {
+          // Para otras redes, crear una nueva entidad
+          const entidadRed = this.ecsManager.agregarEntidad();
+          redesConEntidades.set(entidadRed, r);
+          this.crearRed(zonaEntidad, entidadRed, red, relacionZonaRed);
+        }
       });
+
       (z.oficinas ?? []).forEach((oficina: unknown) => {
         const oficinaEntidad = this.crearOficina(oficina, zonaEntidad);
         const ofi = oficina as { espacios?: unknown[] };
@@ -207,7 +243,12 @@ export class ScenarioBuilder {
     return entidadZona;
   }
 
-  crearRed(entidadZona: Entidad, entidadRed: Entidad, red: unknown) {
+  crearRed(
+    entidadZona: Entidad,
+    entidadRed: Entidad,
+    red: unknown,
+    relacionZonaRed: SistemaRelaciones
+  ) {
     const r = red as {
       nombre: string;
       color: string;
@@ -216,13 +257,7 @@ export class ScenarioBuilder {
 
     this.ecsManager.agregarComponente(entidadRed, redComponente);
 
-    // Crear sistema de relaciones Zona-Red y agregarlo al ECSManager
-    const relacionZonaRed = new SistemaRelaciones(
-      ZonaComponent,
-      RedComponent,
-      "redes"
-    );
-    this.ecsManager.agregarSistema(relacionZonaRed);
+    // Usar el sistema de relaciones que se pasó como parámetro
     relacionZonaRed.agregar(entidadZona, entidadRed);
   }
 
@@ -339,7 +374,7 @@ export class ScenarioBuilder {
         const firewallConfig = new FirewallBuilder().build();
         this.ecsManager.agregarComponente(
           entidadDispositivo,
-          new RouterComponent(r.conectadoAInternet ?? true, firewallConfig, [])
+          new RouterComponent(firewallConfig, [])
         );
         break;
       }
@@ -408,6 +443,27 @@ export class ScenarioBuilder {
       }
     }
     return undefined;
+  }
+
+  /**
+   * Verifica si una zona tiene al menos un router
+   */
+  private zonaTieneRouters(zona: unknown): boolean {
+    const z = zona as { oficinas?: unknown[] };
+    
+    for (const oficina of z.oficinas ?? []) {
+      const ofi = oficina as { espacios?: unknown[] };
+      for (const espacio of ofi.espacios ?? []) {
+        const esp = espacio as { dispositivos?: Array<{ tipo?: unknown }> };
+        for (const dispositivo of esp.dispositivos ?? []) {
+          if (dispositivo.tipo === TipoDispositivo.ROUTER) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    return false;
   }
 
   /**
