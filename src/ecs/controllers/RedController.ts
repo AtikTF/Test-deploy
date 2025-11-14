@@ -307,7 +307,27 @@ export class RedController {
     );
   }
 
- 
+ estaProtocoloBloqueadoEnRed(
+    entidadRouter: Entidad,
+    entidadRed: Entidad,
+    protocolo: TipoProtocolo,
+    direccion: DireccionTrafico
+  ): boolean {
+    const configuracionFirewall = this.obtenerReglasDeRed(entidadRouter, entidadRed);
+    
+    if (!configuracionFirewall) {
+      return false;
+    }
+
+    const reglaEncontrada = configuracionFirewall.find(regla => 
+      regla.protocolo === protocolo && 
+      regla.direccion === direccion
+    );
+    
+    
+    return !!reglaEncontrada;
+  }
+
   public obtenerLogsTrafico(entidadRouter: Entidad): any[] {
     const router = this.obtenerRouter(entidadRouter);
     return router?.logsTrafico || [];

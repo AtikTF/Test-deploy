@@ -11,7 +11,7 @@ import type {
   ZonaTopologia,
 } from "../utils/topologiaLayout";
 import { EscenarioController } from "../../../../ecs/controllers/EscenarioController";
-import { EventosRed } from "../../../../types/EventosEnums";
+import { EventosPublicos } from "../../../../types/EventosEnums";
 import type { ECSManager } from "../../../../ecs/core/ECSManager";
 import type { ScenarioBuilder } from "../../../../ecs/utils/ScenarioBuilder";
 
@@ -141,21 +141,23 @@ export function useTopologiaData() {
 
   // Suscripción a eventos de red para refrescar la vista
   useEffect(() => {
-    const incrementarRefresh = () => setRefreshKey((prev) => prev + 1);
+    /*const incrementarRefresh = () => setRefreshKey((prev) => prev + 1);
 
+    
     const unsubscribeAsignada = ecsManager.on(
-      EventosRed.RED_ASIGNADA,
+      EventosPublicos.RED_ASIGNADA,
       incrementarRefresh
     );
     const unsubscribeRemovida = ecsManager.on(
-      EventosRed.RED_REMOVIDA,
+      EventosPublicos.RED_REMOVIDA,
       incrementarRefresh
     );
+    
 
     return () => {
       unsubscribeAsignada();
       unsubscribeRemovida();
-    };
+    };*/
   }, [ecsManager]);
 
   // Construcción de la topología completa

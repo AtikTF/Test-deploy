@@ -11,7 +11,7 @@ import {
   EstadoAtaqueDispositivo,
   TipoDispositivo,
 } from "../../../../types/DeviceEnums";
-import { EventosRed } from "../../../../types/EventosEnums";
+import { EventosPublicos } from "../../../../types/EventosEnums";
 
 export function useDispositivos() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -19,15 +19,16 @@ export function useDispositivos() {
   useEffect(() => {
     const controller = EscenarioController.getInstance();
 
+    /*
     const unsubscribeAsignada = controller.ecsManager.on(
-      EventosRed.RED_ASIGNADA,
+      EventosPublicos.RED_ASIGNADA,
       () => {
         setRefreshKey((prev) => prev + 1);
       }
     );
 
     const unsubscribeRemovida = controller.ecsManager.on(
-      EventosRed.RED_REMOVIDA,
+      EventosPublicos.RED_REMOVIDA,
       () => {
         setRefreshKey((prev) => prev + 1);
       }
@@ -37,6 +38,8 @@ export function useDispositivos() {
       unsubscribeAsignada();
       unsubscribeRemovida();
     };
+    
+    */
   }, []);
 
   const dispositivos = useMemo(() => {

@@ -5,11 +5,7 @@ import { getDispositivoHeight } from "../config/modelConfig";
 import { useEscenarioActual } from "../../../common/contexts/EscenarioContext";
 import { EscenarioController } from "../../../../ecs/controllers/EscenarioController";
 import {
-  EventosAtaque,
-  EventosPresupuesto,
-  EventosRed,
-  EventosTiempo,
-  EventosVPN,
+  EventosPublicos
 } from "../../../../types/EventosEnums";
 import { RedController } from "../../../../ecs/controllers/RedController";
 
@@ -155,7 +151,7 @@ export function useECSScene() {
     tiempoIniciadoRef.current = true;
 
     const unsubscribeActivoNoEnviado = escenarioController.on(
-      EventosRed.RED_ACTIVO_NO_ENVIADO,
+      EventosPublicos.RED_ACTIVO_NO_ENVIADO,
       (data: unknown) => {
         const d = data as { descripcion: string };
         setMostrarNuevoLog(true);
@@ -167,7 +163,7 @@ export function useECSScene() {
     );
 
     const unsubscribeActivoEnviado = escenarioController.on(
-      EventosRed.RED_ACTIVO_ENVIADO,
+      EventosPublicos.RED_ACTIVO_ENVIADO,
       (data: unknown) => {
         const d = data as {
           nombreActivo: string;
@@ -188,7 +184,7 @@ export function useECSScene() {
     );
 
     const unsubscribeNotificacionEvento = escenarioController.on(
-      EventosTiempo.TIEMPO_NOTIFICACION_EVENTO,
+      EventosPublicos.TIEMPO_NOTIFICACION_EVENTO,
       (data: unknown) => {
         const d = data as { descripcionEvento: string };
         setMostrarNuevoLog(true);
@@ -200,7 +196,7 @@ export function useECSScene() {
     );
 
     const unsubscribeBloqueoFirewall = escenarioController.on(
-      EventosRed.RED_FIREWALL_BLOQUEO,
+      EventosPublicos.TRAFICO_BLOQUEADO,
       (data: unknown) => {
         const d = data as { descripcion: string };
         setMostrarNuevoLog(true);
@@ -212,14 +208,14 @@ export function useECSScene() {
     );
 
     const unsubscribePresupuesto = escenarioController.on(
-      EventosPresupuesto.PRESUPUESTO_ACTUALIZADO,
+      EventosPublicos.PRESUPUESTO_ACTUALIZADO,
       (data: unknown) => {
         const d = data as { presupuesto: number };
         setPresupuesto(d.presupuesto);
       }
     );
     const unsubscribeNotificacionAtaque = escenarioController.on(
-      EventosTiempo.TIEMPO_NOTIFICACION_ATAQUE,
+      EventosPublicos.TIEMPO_NOTIFICACION_ATAQUE,
       (data: unknown) => {
         const d = data as { descripcionAtaque: string };
         setMostrarNuevoLog(true);
@@ -232,7 +228,7 @@ export function useECSScene() {
     );
 
     const unsubscribeActualizado = escenarioController.on(
-      EventosTiempo.TIEMPO_ACTUALIZADO,
+      EventosPublicos.TIEMPO_ACTUALIZADO,
       (data: unknown) => {
         const d = data as { transcurrido: number; pausado: boolean };
         setTiempoTranscurrido(d.transcurrido);
@@ -240,7 +236,7 @@ export function useECSScene() {
     );
 
     const unsubscribePausado = escenarioController.on(
-      EventosTiempo.TIEMPO_PAUSADO,
+      EventosPublicos.TIEMPO_PAUSADO,
       (data: unknown) => {
         const d = data as { transcurrido: number; pausado: boolean };
         setTiempoTranscurrido(d.transcurrido);
@@ -249,7 +245,7 @@ export function useECSScene() {
     );
 
     const unsubscribeAtaqueRealizado = escenarioController.on(
-      EventosAtaque.ATAQUE_REALIZADO,
+      EventosPublicos.ATAQUE_REALIZADO,
       (data: unknown) => {
         const ataque = (data as unknown as { ataque?: { tipoAtaque?: string } })
           .ataque;
@@ -264,7 +260,7 @@ export function useECSScene() {
     );
 
     const unsubscribeVPNEstablecida = escenarioController.on(
-      EventosVPN.VPN_CONEXION_ESTABLECIDA,
+      EventosPublicos.VPN_CONEXION_ESTABLECIDA,
       (data: unknown) => {
         const d = data as string;
         setMostrarNuevoLog(true);
@@ -276,7 +272,7 @@ export function useECSScene() {
     );
 
     const unsubscribeVPNRechazada = escenarioController.on(
-      EventosVPN.VPN_CONEXION_RECHAZADA,
+      EventosPublicos.VPN_CONEXION_RECHAZADA,
       (data: unknown) => {
         const d = data as string;
         setMostrarNuevoLog(true);
@@ -288,7 +284,7 @@ export function useECSScene() {
     );
 
     const unsubscribeAtaqueMitigado = escenarioController.on(
-      EventosAtaque.ATAQUE_MITIGADO,
+      EventosPublicos.ATAQUE_MITIGADO,
       (data: unknown) => {
         const ataque = (data as unknown as { ataque?: { tipoAtaque?: string } })
           .ataque;
@@ -303,7 +299,7 @@ export function useECSScene() {
     );
 
     const unsubscribeReanudado = escenarioController.on(
-      EventosTiempo.TIEMPO_REANUDADO,
+      EventosPublicos.TIEMPO_REANUDADO,
       (data: unknown) => {
         const d = data as { transcurrido: number; pausado: boolean };
         setTiempoTranscurrido(d.transcurrido);

@@ -1,10 +1,11 @@
-import { useState, useMemo, useCallback } from "react";
-import type { ECSManager } from "../../../../ecs/core";
+import { useMemo, useCallback, useState } from "react";
 import type { Entidad } from "../../../../ecs/core/Componente";
 import { RedController } from "../../../../ecs/controllers/RedController";
 import type { TipoProtocolo } from "../../../../types/TrafficEnums";
-import type { DireccionTrafico } from "../../../../types/FirewallTypes";
-import { DispositivoComponent, RouterComponent, RedComponent } from "../../../../ecs/components";
+import { DireccionTrafico, AccionFirewall } from "../../../../types/FirewallTypes";
+import { RouterComponent, RedComponent } from "../../../../ecs/components";
+import { useECSSceneContext } from "../../escenarios-simulados/context/ECSSceneContext";
+import { useEscenario } from "../../../common/contexts/EscenarioContext";
 
 interface RedInfo {
   nombre: string;
@@ -12,27 +13,28 @@ interface RedInfo {
   entidadId: Entidad;
 }
 
-export function useFirewall(entidadRouter: Entidad | null, ecsManager: ECSManager) {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [modoEntrante, setModoEntrante] = useState<'bloquear' | 'permitir'>('bloquear');
-  const [modoSaliente, setModoSaliente] = useState<'bloquear' | 'permitir'>('bloquear');
-
+export function useFirewall() {
+  const { entidadSeleccionadaId } = useEscenario();
+  const { ecsManager } = useECSSceneContext();
+  
+  const [version, setVersion] = useState(0);
+  
+  const entidadRouter = entidadSeleccionadaId;
+  
   const redController = useMemo(() => {
     if (!ecsManager) return null;
     return RedController.getInstance(ecsManager);
   }, [ecsManager]);
 
-  // Obtener logs directamente del RouterComponent
   const logsFirewall = useMemo(() => {
     if (!entidadRouter) return [];
     
     const routerComponent = ecsManager.getComponentes(entidadRouter)?.get(RouterComponent);
-    return routerComponent?.logsFirewall || [];
-  }, [entidadRouter, ecsManager, refreshKey]);
+    return routerComponent?.logsTrafico || [];
+  }, [entidadRouter, ecsManager, version]); 
 
   const redesRouter = useMemo((): RedInfo[] => {
     if (!entidadRouter || !redController) return [];
-
     const redesEntidades = redController.obtenerRedesDeRouter(entidadRouter);
     
     return redesEntidades.map(entidadRed => {
@@ -45,102 +47,51 @@ export function useFirewall(entidadRouter: Entidad | null, ecsManager: ECSManage
         entidadId: entidadRed
       };
     });
-  }, [entidadRouter, redController, ecsManager, refreshKey]);
+  }, [entidadRouter, redController, ecsManager]);
 
-  const routerInfo = useMemo(() => {
-    if (!entidadRouter) return null;
-
-    const container = ecsManager.getComponentes(entidadRouter);
-    const dispComp = container?.get(DispositivoComponent);
-    const routerComp = container?.get(RouterComponent);
-
-    return {
-      nombre: dispComp?.nombre || 'Router',
-      conectadoAInternet: routerComp?.conectadoAInternet || false,
-      firewallHabilitado: routerComp?.firewall?.habilitado || false
-    };
-  }, [entidadRouter, ecsManager, refreshKey]);
-
-  const configuracionFirewall = useMemo(() => {
-    if (!entidadRouter || !redController) return null;
-    return redController.obtenerConfiguracionFirewall(entidadRouter);
-  }, [entidadRouter, redController, refreshKey]);
-
-
-  const estaProtocoloBloqueado = useCallback((protocolo: TipoProtocolo, direccion: DireccionTrafico): boolean => {
-    if (!configuracionFirewall) return false;
-
-    const reglasProtocolo = configuracionFirewall.reglasGlobales.get(protocolo);
-    
-    if (reglasProtocolo && reglasProtocolo.length > 0) {
-      const regla = reglasProtocolo.find(r => r.direccion === direccion || r.direccion === 'AMBAS');
-      if (regla) {
-        return regla.accion === 'DENEGAR';
-      }
+  const toggleRegla = useCallback((entidadRed: Entidad, protocolo: TipoProtocolo, direccion: DireccionTrafico) => {
+    if (!redController || !entidadRouter) {
+      return;
     }
-
-    const politica = direccion === 'ENTRANTE' 
-      ? configuracionFirewall.politicaPorDefectoEntrante 
-      : configuracionFirewall.politicaPorDefectoSaliente;
     
-    return politica === 'DENEGAR';
-  }, [configuracionFirewall, refreshKey]);
-
-  const toggleProtocolo = useCallback((protocolo: TipoProtocolo, direccion: DireccionTrafico) => {
-    if (!entidadRouter || !redController) return;
-
-    const estaBloqueado = estaProtocoloBloqueado(protocolo, direccion);
-    const accion = estaBloqueado ? 'PERMITIR' : 'DENEGAR';
+    const estaBloqueadoActualmente = redController.estaProtocoloBloqueadoEnRed(
+      entidadRouter, 
+      entidadRed, 
+      protocolo, 
+      direccion
+    );
     
-    redController.agregarReglaFirewall(entidadRouter, protocolo, accion, direccion);
-    setRefreshKey(prev => prev + 1); // Refrescar para mostrar el nuevo log
-  }, [entidadRouter, redController, estaProtocoloBloqueado]);
-
-  const bloquearTodos = useCallback((protocolos: TipoProtocolo[], direccion: DireccionTrafico) => {
-    if (!entidadRouter || !redController) return;
-    
-    redController.bloquearTodosProtocolos(entidadRouter, protocolos, direccion);
-    
-    // Cambiar el modo para alternar el botón
-    if (direccion === 'ENTRANTE') {
-      setModoEntrante('permitir');
+    if (estaBloqueadoActualmente) {
+      redController.eliminarReglaFirewall(entidadRouter, entidadRed, protocolo, direccion);
     } else {
-      setModoSaliente('permitir');
+      redController.agregarReglaFirewall(entidadRouter, entidadRed, protocolo, AccionFirewall.DENEGAR, direccion);
     }
     
-    setRefreshKey(prev => prev + 1);
-  }, [entidadRouter, redController]);
+    setVersion(v => v + 1);
+  }, [redController, entidadRouter]);
 
-  const permitirTodos = useCallback((protocolos: TipoProtocolo[], direccion: DireccionTrafico) => {
-    if (!entidadRouter || !redController) return;
-    
-    redController.permitirTodosProtocolos(entidadRouter, protocolos, direccion);
-    
-    // Cambiar el modo para alternar el botón
-    if (direccion === 'ENTRANTE') {
-      setModoEntrante('bloquear');
-    } else {
-      setModoSaliente('bloquear');
-    }
-    
-    setRefreshKey(prev => prev + 1);
-  }, [entidadRouter, redController]);
+  const estaBloqueado = useCallback((
+    protocolo: TipoProtocolo, 
+    direccion: DireccionTrafico, 
+    entidadRed: Entidad
+  ): boolean => {
+    if (!redController || !entidadRouter) return false;
+    return redController.estaProtocoloBloqueadoEnRed(entidadRouter, entidadRed, protocolo, direccion);
+  }, [redController, entidadRouter, version]); 
 
-  const refrescarLogs = useCallback(() => {
-    setRefreshKey(prev => prev + 1);
-  }, []);
+  const toggleTodosServicios = (entidadRouter: Entidad, entidadRed: Entidad, direccion: DireccionTrafico) => {
+    // FALTA DEFINIR ESTO
+
+    //if (estado === AccionFirewall.DENEGAR){
+    //   redController!.permitirProtocolosEnRed(entidadRouter, entidadRed, protocolos, DireccionTrafico.AMBAS);
+    // }
+  }
+    
 
   return {
-    router: routerInfo,
     redesRouter,
-    configuracionFirewall,
-    estaProtocoloBloqueado,
-    toggleProtocolo,
-    bloquearTodos,
-    permitirTodos,
-    modoEntrante,
-    modoSaliente,
+    toggleRegla,
+    estaBloqueado,
     logsFirewall,
-    refrescarLogs
   };
 }

@@ -2,144 +2,101 @@ import { useState, useMemo } from 'react';
 import ComboBox from '../../../common/components/ComboBox';
 import styles from '../styles/ModalFirewall.module.css';
 import { useFirewall } from '../hooks';
-import { useECSSceneContext } from '../../escenarios-simulados/context/ECSSceneContext';
-import { useEscenario } from '../../../common/contexts';
 import { ConfiguracionProtocolos } from '../../../../data/configuraciones/configProtocolos';
-
-/**
- * Componente para configurar el Firewall de un router
- * Permite permitir o denegar servicios por red y dirección
- */
+import BotonServicioFirewall from './BotonServicioFirewall';
+import type { Entidad } from '../../../../ecs/core';
+import { DireccionTrafico } from '../../../../types/FirewallTypes';
 
 type RedOption = {
     label: string;
-    value: string;
+    value: Entidad;
 };
 
 export default function ModalFirewall() {
-    const { ecsManager } = useECSSceneContext();
-    const { entidadSeleccionadaId } = useEscenario();
-
-    const {
-        redesRouter,
-        estaProtocoloBloqueado,
-        toggleProtocolo,
-        bloquearTodos,
-        permitirTodos,
-        modoEntrante,
-        modoSaliente,
-        logsFirewall
-    } = useFirewall(entidadSeleccionadaId, ecsManager);
-
+    const { redesRouter } = useFirewall();
+    
     const REDES: RedOption[] = useMemo(() => {
         return redesRouter.map(red => ({
             label: red.nombre,
-            value: red.nombre.toLowerCase().replace(/\s+/g, '_')
+            value: red.entidadId
         }));
     }, [redesRouter]);
 
-    const [redSeleccionada, setRedSeleccionada] = useState<RedOption | null>(REDES[0] || null);
-    console.log('logsFirewall sin tipo VPN', logsFirewall.filter(log => !log.mensaje.includes('VPN')));
-    const logs = logsFirewall.map((log: any) => log.mensaje);
-
-    const protocolos = useMemo(() => {
-        return ConfiguracionProtocolos.map(p => p.protocolo);
-    }, []);
+    const [redSeleccionada, setRedSeleccionada] = useState<Entidad>(REDES[0].value);
+    const logs = [].map((log: any) => log.mensaje);
 
     return (
         <div className={styles.modalFirewallContainer}>
             <div style={{ width: "180px" }}>
                 <ComboBox
                     items={REDES}
-                    value={redSeleccionada}
-                    onChange={setRedSeleccionada}
-                    getKey={(item) => item.value}
+                    value={REDES.find(r => r.value === redSeleccionada) || null}
+                    onChange={(item) => setRedSeleccionada(item.value)}
+                    getKey={(item) => String(item.value)}
                     getLabel={(item) => item.label}
                     placeholder="Selecciona una red"
                 />
             </div>
 
-            {redSeleccionada && (
-                <div className={styles.reglasGrid}>
-                    {[redSeleccionada].map(red => (
-                        <div key={red.value} className={styles.redSection}>
-                            <div className={styles.direccionGroup}>
-                                <div className={styles.direccionHeader}>
-                                    <span className={styles.direccionLabel}>
-                                        <span className={styles.direccionIcon}>←</span>
-                                        Entrante desde
-                                    </span>
-                                    <button
-                                        className={styles.toggleTodosBtn}
-                                        onClick={() => {
-                                            if (modoEntrante === 'bloquear') {
-                                                bloquearTodos(protocolos, 'ENTRANTE');
-                                            } else {
-                                                permitirTodos(protocolos, 'ENTRANTE');
-                                            }
-                                        }}
-                                        title={modoEntrante === 'permitir' ? "Permitir todos" : "Bloquear todos"}
-                                    >
-                                        {modoEntrante === 'permitir' ? '✓ Permitir todos' : '✗ Bloquear todos'}
-                                    </button>
-                                </div>
-                                <div className={styles.serviciosGrid}>
-                                    {ConfiguracionProtocolos.map(protocolo => {
-                                        const bloqueado = estaProtocoloBloqueado(protocolo.protocolo, 'ENTRANTE');
-                                        return (
-                                            <button
-                                                key={protocolo.protocolo}
-                                                className={`${styles.servicioBtn} ${bloqueado ? styles.bloqueado : styles.permitido}`}
-                                                onClick={() => toggleProtocolo(protocolo.protocolo, 'ENTRANTE')}
-                                            >
-                                                <span className={styles.servicioNombre}>{protocolo.nombre}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+            <div className={styles.reglasGrid}>
+                    <div className={styles.redSection}>
+                        <div className={styles.direccionGroup}>
+                            <div className={styles.direccionHeader}>
+                                <span className={styles.direccionLabel}>
+                                    <span className={styles.direccionIcon}>←</span>
+                                    Entrante desde
+                                </span>
+                                <button
+                                    className={styles.toggleTodosBtn}
+                                    onClick={() => {}}
+                                >
+                                    Boton
+                                </button>
                             </div>
-
-                            <div className={styles.separator} />
-
-                            <div className={styles.direccionGroup}>
-                                <div className={styles.direccionHeader}>
-                                    <span className={styles.direccionLabel}>
-                                        <span className={styles.direccionIcon}>→</span>
-                                        Saliente hacia
-                                    </span>
-                                    <button
-                                        className={styles.toggleTodosBtn}
-                                        onClick={() => {
-                                            if (modoSaliente === 'bloquear') {
-                                                bloquearTodos(protocolos, 'SALIENTE');
-                                            } else {
-                                                permitirTodos(protocolos, 'SALIENTE');
-                                            }
-                                        }}
-                                        title={modoSaliente === 'permitir' ? "Permitir todos" : "Bloquear todos"}
-                                    >
-                                        {modoSaliente === 'permitir' ? '✓ Permitir todos' : '✗ Bloquear todos'}
-                                    </button>
-                                </div>
-                                <div className={styles.serviciosGrid}>
-                                    {ConfiguracionProtocolos.map(protocolo => {
-                                        const bloqueado = estaProtocoloBloqueado(protocolo.protocolo, 'SALIENTE');
-                                        return (
-                                            <button
-                                                key={protocolo.protocolo}
-                                                className={`${styles.servicioBtn} ${bloqueado ? styles.bloqueado : styles.permitido}`}
-                                                onClick={() => toggleProtocolo(protocolo.protocolo, 'SALIENTE')}
-                                            >
-                                                <span className={styles.servicioNombre}>{protocolo.nombre}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                            <div className={styles.serviciosGrid}>
+                                {ConfiguracionProtocolos.map((protocolo) => (
+                                    <BotonServicioFirewall 
+                                        key={protocolo.protocolo}
+                                        protocolo={protocolo.protocolo}
+                                        label={protocolo.nombre}
+                                        redSeleccionada={redSeleccionada}
+                                        direccion={DireccionTrafico.ENTRANTE}
+                                    />
+                                ))}
                             </div>
+                            
                         </div>
-                    ))}
-                </div>
-            )}
+                        <div className={styles.separator} />
+                         <div className={styles.direccionGroup}>
+                            <div className={styles.direccionHeader}>
+                                <span className={styles.direccionLabel}>
+                                    <span className={styles.direccionIcon}>→</span>
+                                    Saliente hacia
+                                </span>
+                                <button
+                                    className={styles.toggleTodosBtn}
+                                    onClick={() => {}}
+                                >
+                                    Boton
+                                </button>
+                            </div>
+                            <div className={styles.serviciosGrid}>
+                                {ConfiguracionProtocolos.map((protocolo) => (
+                                    <BotonServicioFirewall 
+                                        key={protocolo.protocolo}
+                                        protocolo={protocolo.protocolo}
+                                        label={protocolo.nombre}
+                                        redSeleccionada={redSeleccionada}
+                                        direccion={DireccionTrafico.SALIENTE}
+                                    />
+                                ))}
+                            </div>
+                            
+                        </div>
+                    </div>
+            </div>
+
+
 
             <div className={styles.logsSection}>
                 <h3 className={styles.subtitle}>Registro de Actividad</h3>
@@ -150,14 +107,13 @@ export default function ModalFirewall() {
                         </div>
                     ) : (
                         <div className={styles.logsGrid}>
-                            {logsFirewall.map((log: any, index) => (
+                            {[].map((log: any, index) => (
                                 <LogItem key={index} log={log} />
                             ))}
                         </div>
                     )}
                 </div>
             </div>
-
         </div>
     );
 }

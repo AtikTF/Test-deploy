@@ -8,7 +8,7 @@ import {
 } from "../../../../ecs/components";
 import { SistemaJerarquiaEscenario } from "../../../../ecs/systems/SistemaJerarquiaEscenario";
 import { RedController } from "../../../../ecs/controllers/RedController";
-import { EventosRed } from "../../../../types/EventosEnums";
+import { EventosPublicos } from "../../../../types/EventosEnums";
 
 interface RedInfo {
   entidadId: Entidad;
@@ -25,18 +25,21 @@ export function useDispositivoRedes(
 
   /* Eventos del ECS */
   useEffect(() => {
-    const unsubscribeAsignada = ecsManager.on(EventosRed.RED_ASIGNADA, () => {
+    /*
+    const unsubscribeAsignada = ecsManager.on(EventosPublicos.RED_ASIGNADA, () => {
       setRefreshKey((prev) => prev + 1);
     });
 
-    const unsubscribeRemovida = ecsManager.on(EventosRed.RED_REMOVIDA, () => {
+    const unsubscribeRemovida = ecsManager.on(EventosPublicos.RED_REMOVIDA, () => {
       setRefreshKey((prev) => prev + 1);
     });
 
-    return () => {
+
+     return () => {
       unsubscribeAsignada();
       unsubscribeRemovida();
     };
+    */
   }, [ecsManager]);
 
   const dispositivo = useMemo(() => {
