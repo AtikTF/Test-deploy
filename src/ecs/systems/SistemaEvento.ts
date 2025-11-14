@@ -125,35 +125,35 @@ export class SistemaEvento extends Sistema {
         });
         break;
       }
-      // case TipoEvento.TRAFICO_RED: {
-      //   console.log("Ejecutando evento de tráfico de red...");
-      //   // Convertir nombres de dispositivos a entidades (null = Internet)
-      //   const info = evento.infoAdicional as {
-      //     dispositivoOrigen: string;
-      //     dispositivoDestino: string;
-      //     protocolo: unknown;
-      //   };
-      //   const entidadOrigen = this.buscarDispositivoPorNombre(
-      //     info.dispositivoOrigen
-      //   );
-      //   const entidadDestino = this.buscarDispositivoPorNombre(
-      //     info.dispositivoDestino
-      //   );
-      //
-      //   const eventoConEntidades = {
-      //     ...evento,
-      //     infoAdicional: {
-      //       entidadOrigen,
-      //       entidadDestino,
-      //       protocolo: info.protocolo,
-      //     },
-      //   };
-      //
-      //   this.ecsManager.emit(EventosRed.RED_TRAFICO, {
-      //     evento: eventoConEntidades,
-      //   });
-      //   break;
-      // }
+      case TipoEvento.TRAFICO_RED: {
+         console.log("Ejecutando evento de tráfico de red...");
+         // Convertir nombres de dispositivos a entidades (null = Internet)
+         const info = evento.infoAdicional as {
+           dispositivoOrigen: string;
+           dispositivoDestino: string;
+           protocolo: unknown;
+         };
+         const entidadOrigen = this.buscarDispositivoPorNombre(
+           info.dispositivoOrigen
+         );
+         const entidadDestino = this.buscarDispositivoPorNombre(
+           info.dispositivoDestino
+         );
+      
+         const eventoConEntidades = {
+           ...evento,
+           infoAdicional: {
+             entidadOrigen,
+             entidadDestino,
+             protocolo: info.protocolo,
+           },
+       };
+      
+       this.ecsManager.emit(EventosInternos.RED_TRAFICO, {
+           evento: eventoConEntidades,
+         });
+         break;
+       }
       case TipoEvento.CONEXION_VPN: {
         //Obtenemos los permisos del gateway y del cliente
         const info = evento.infoAdicional as {

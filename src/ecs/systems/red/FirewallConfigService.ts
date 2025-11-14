@@ -1,12 +1,16 @@
 import type { ECSManager } from "../../core/ECSManager";
 import type { Entidad } from "../../core";
 import { DispositivoComponent, RouterComponent } from "../../components";
-import type { TipoProtocolo } from "../../../types/TrafficEnums";
+import { TipoProtocolo } from "../../../types/TrafficEnums";
 import { DireccionTrafico, AccionFirewall } from "../../../types/FirewallTypes";
 import type { Reglas } from "../../../types/FirewallTypes";
 
 export class FirewallConfigService {
     constructor(private ecsManager: ECSManager) {}
+
+    static obtenerTodosLosProtocolos(): TipoProtocolo[] {
+        return Object.values(TipoProtocolo);
+    }
 
     agregarReglaFirewall(
         entidadRouter: Entidad,
@@ -60,14 +64,24 @@ export class FirewallConfigService {
         protocolos: TipoProtocolo[],
         direccion: DireccionTrafico
     ): void {
-        protocolos.forEach(protocolo => {
-            this.eliminarRegla(
-                entidadRouter,
-                entidadRed,
-                protocolo,
-                direccion
-            );
-        });
+        const router = this.ecsManager.getComponentes(entidadRouter)?.get(RouterComponent);
+        
+        if (!router) {
+            console.error(`Router con entidad "${entidadRouter}" no encontrado`);
+            return;
+        }
+
+        const reglasExistentes = router.bloqueosFirewall.get(entidadRed) || [];
+        
+        const reglasActualizadas = reglasExistentes.filter(regla => 
+            !(protocolos.includes(regla.protocolo) && regla.direccion === direccion)
+        );
+
+        if (reglasActualizadas.length > 0) {
+            router.bloqueosFirewall.set(entidadRed, reglasActualizadas);
+        } else {
+            router.bloqueosFirewall.delete(entidadRed);
+        }
     }
 
     obtenerReglasDeRed(entidadRouter: Entidad, entidadRed: Entidad): Reglas[] {

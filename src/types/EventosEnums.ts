@@ -2,6 +2,7 @@ export enum EventosInternos {
   TIEMPO_EJECUCION_ATAQUE = "tiempo:ejecucionAtaque",
   TIEMPO_EJECUCION_EVENTO = "tiempo:ejecucionEvento",
   RED_ENVIAR_ACTIVO = "red:enviarActivo",
+  RED_TRAFICO = "red:trafico",
   VPN_SOLICITUD_CONEXION = "vpn:solicitudConexion",
 }
 

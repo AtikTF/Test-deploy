@@ -96,26 +96,26 @@ export class RedController {
       this.agregarLogGeneralEscenario(log);
     });
 
-    // this.ecsManager.on(EventosRed.RED_TRAFICO, (data: unknown) => {
-    //   const d = data as {
-    //     evento: {
-    //       infoAdicional: {
-    //         entidadOrigen: Entidad;
-    //         entidadDestino: Entidad;
-    //         protocolo: TipoProtocolo;
-    //       };
-    //     };
-    //   };
-    //
-    //   // Enviar tráfico directamente con el protocolo del evento
-    //   const resultado = this.sistemaRed?.enviarTrafico(
-    //     d.evento.infoAdicional.entidadOrigen,
-    //     d.evento.infoAdicional.entidadDestino,
-    //     d.evento.infoAdicional.protocolo,
-    //     null
-    //   );
-    //   console.log("Tráfico enviado desde el controlador de red", resultado);
-    // });
+    this.ecsManager.on(EventosInternos.RED_TRAFICO, (data: unknown) => {
+      const d = data as {
+        evento: {
+          infoAdicional: {
+            entidadOrigen: Entidad;
+            entidadDestino: Entidad;
+            protocolo: TipoProtocolo;
+          };
+        };
+      };
+
+      // Enviar tráfico directamente con el protocolo del evento
+      const resultado = this.sistemaRed?.enviarTrafico(
+        d.evento.infoAdicional.entidadOrigen,
+        d.evento.infoAdicional.entidadDestino,
+        d.evento.infoAdicional.protocolo,
+        null
+      );
+      console.log("Tráfico enviado desde el controlador de red", resultado);
+    });
 
     this.ecsManager.on(EventosInternos.VPN_SOLICITUD_CONEXION, (data: unknown) => {
       const d = data as {
@@ -246,17 +246,17 @@ export class RedController {
   public bloquearProtocolosEnRed(
     entidadRouter: Entidad,
     entidadRed: Entidad,
-    protocolos: TipoProtocolo[],
     direccion: DireccionTrafico
   ): void {
     if (!this.sistemaRed) {
       console.error("Sistema de red no inicializado");
       return;
     }
+    const todosLosProtocolos = this.obtenerTodosLosProtocolos();
     this.sistemaRed.bloquearProtocolosEnRed(
       entidadRouter,
       entidadRed,
-      protocolos,
+      todosLosProtocolos,
       direccion
     );
   }
@@ -264,17 +264,17 @@ export class RedController {
   public permitirProtocolosEnRed(
     entidadRouter: Entidad,
     entidadRed: Entidad,
-    protocolos: TipoProtocolo[],
     direccion: DireccionTrafico
   ): void {
     if (!this.sistemaRed) {
       console.error("Sistema de red no inicializado");
       return;
     }
+    const todosLosProtocolos = this.obtenerTodosLosProtocolos();
     this.sistemaRed.permitirProtocolosEnRed(
       entidadRouter,
       entidadRed,
-      protocolos,
+      todosLosProtocolos,
       direccion
     );
   }
@@ -331,6 +331,10 @@ export class RedController {
   public obtenerLogsTrafico(entidadRouter: Entidad): any[] {
     const router = this.obtenerRouter(entidadRouter);
     return router?.logsTrafico || [];
+  }
+
+  public obtenerTodosLosProtocolos(): TipoProtocolo[] {
+    return Object.values(TipoProtocolo);
   }
 
   // ==================== FIN MÉTODOS DE FIREWALL ====================

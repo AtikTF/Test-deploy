@@ -37,8 +37,7 @@ export class EventoRedService {
         origen,
         destino,
         protocolo,
-        mensaje: `Trafico bloqueado: desde ${origen} hacia ${destino} [${protocolo}]
-        }`,
+        mensaje: `Trafico bloqueado: desde ${origen} hacia ${destino} [${protocolo}]`,
         tipo: "BLOQUEADO",
         entidadRouter,
         router: nombreRouter,
