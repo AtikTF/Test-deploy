@@ -166,14 +166,14 @@ export const escenarioBase: unknown = {
               dispositivos: [
                 {
                   id: 1008, // ID Corregido (antes 1004)
-                  tipo: TipoDispositivo.ROUTER,
+                  tipo: TipoDispositivo.VPN,
                   nombre: "VPN Gateway",
                   sistemaOperativo: "VPN OS",
                   hardware: "Cisco VPN",
                   software: "VPN",
                   posicion: { x: -4, y: 0, z: 3, rotacionY: 180 },
                   // --- Feature 3: Objetivo de configuración de VPN Gateway ---
-                  redes: ["LAN2"],
+                  redes: ["LAN2","Internet"],
                 },
               ],
             },

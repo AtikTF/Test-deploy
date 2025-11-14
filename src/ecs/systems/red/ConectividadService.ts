@@ -3,6 +3,8 @@ import {
   RouterComponent,
   ZonaComponent,
   DispositivoComponent,
+  RedComponent,
+  VPNGatewayComponent,
 } from "../../components";
 import type { Entidad } from "../../core/Componente";
 
@@ -45,20 +47,17 @@ export class ConectividadService {
 
     const redesOrigen = this.obtenerRedesDelDispositivo(entidadOrigen);
     const redesDestino = this.obtenerRedesDelDispositivo(entidadDestino);
-console.log("Redes Origen: ", redesOrigen);
-console.log("Redes Destino: ", redesDestino);
-    // una de las dos ni siquiera tiene redes
-
+    
     if (redesOrigen.length === 0 || redesDestino.length === 0) {
       return false;
     }
 
     // Caso 1: Si comparten alguna red, están directamente conectados
-    console.log("Comparten red directa: ", this.compartanRed(entidadOrigen, entidadDestino));
     if (this.compartanRed(entidadOrigen, entidadDestino)) {
-     
+      console.log("✅ Comparten red directa");
       return true;
     }
+    console.log("❌ NO comparten red directa");
 
     // Permitir tráfico entre distintas redes de misma zona a través de router
     const routersOrigen =
@@ -67,6 +66,7 @@ console.log("Redes Destino: ", redesDestino);
       this.buscarRoutersConectadoADispositivo(entidadDestino);
     // si uno de los dos no tiene routers conectados, no están conectados
     if (routersOrigen.length === 0 || routersDestino.length === 0) {
+      console.log("❌ Uno de los dispositivos NO tiene routers conectados");
       return false;
     }
 
@@ -81,46 +81,48 @@ console.log("Redes Destino: ", redesDestino);
 
 
     routersOrigen.forEach((routerO, index) => {
-      console.log("Router Origen ", index);
-      console.log(
-        this.ecsManager
-          .getComponentes(routerO.entidad)
-          ?.get(DispositivoComponent)?.redes
-      );
+      const nombreRouter = this.ecsManager.getComponentes(routerO.entidad)?.get(DispositivoComponent)?.nombre || `Router ${routerO.entidad}`;
+      const redes = this.ecsManager.getComponentes(routerO.entidad)?.get(DispositivoComponent)?.redes || [];
+      const nombresRedes = redes.map(r => this.ecsManager.getComponentes(r)?.get(RedComponent)?.nombre || r);
+      console.log(`Router Origen ${index}: ${nombreRouter} - Redes: [${nombresRedes.join(', ')}]`);
     });
-    routersDestino.forEach((routerO, index) => {
-      console.log("Router Destino ", index);
-      console.log(
-        this.ecsManager
-          .getComponentes(routerO.entidad)
-          ?.get(DispositivoComponent)?.redes
-      );
+    
+    routersDestino.forEach((routerD, index) => {
+      const nombreRouter = this.ecsManager.getComponentes(routerD.entidad)?.get(DispositivoComponent)?.nombre || `Router ${routerD.entidad}`;
+      const redes = this.ecsManager.getComponentes(routerD.entidad)?.get(DispositivoComponent)?.redes || [];
+      const nombresRedes = redes.map(r => this.ecsManager.getComponentes(r)?.get(RedComponent)?.nombre || r);
+      console.log(`Router Destino ${index}: ${nombreRouter} - Redes: [${nombresRedes.join(', ')}]`);
     });
-    //
-    console.log("No hay routers en comun");
+    
     const redesCola: Entidad[] = [...redesOrigen];
     const redesVisitadas = new Set<Entidad>(redesOrigen);
-    console.log("Redes en cola inicial: ", redesCola);
-    console.log("Redes visitadas inicial: ", redesVisitadas);
+    
+    const nombresColaInicial = redesCola.map(r => this.ecsManager.getComponentes(r)?.get(RedComponent)?.nombre || r);
+    console.log(`Iniciando BFS - Redes en cola: [${nombresColaInicial.join(', ')}]`);
+    
     let i =0;
     while (i < redesCola.length) {
-      console.log("Redes en cola: ", redesCola);
-      console.log("Redes visitadas: ", redesVisitadas);
       const redActual = redesCola[i++];
-      console.log("Red actual: ", redActual);
+      const nombreRedActual = this.ecsManager.getComponentes(redActual)?.get(RedComponent)?.nombre || redActual;
+      console.log(`\n  [BFS ${i}] Explorando red: ${nombreRedActual} (ID: ${redActual})`);
+      
       const routersEnRed = this.buscarRoutersEnRed(redActual);
-      console.log("Routers en red actual: ", routersEnRed);
+      console.log(`    Routers en ${nombreRedActual}: ${routersEnRed.length}`);
 
       for (const routerEntidad of routersEnRed) {
+        const nombreRouter = this.ecsManager.getComponentes(routerEntidad)?.get(DispositivoComponent)?.nombre || `Router ${routerEntidad}`;
         const redesDelRouter = this.obtenerRedesDelDispositivo(routerEntidad);
-        console.log("Redes del router: ", redesDelRouter);
+        const nombresRedesRouter = redesDelRouter.map(r => this.ecsManager.getComponentes(r)?.get(RedComponent)?.nombre || r);
+        console.log(`    ${nombreRouter} conecta: [${nombresRedesRouter.join(', ')}]`);
+        
         for (const nuevaRed of redesDelRouter) {
+          const nombreNuevaRed = this.ecsManager.getComponentes(nuevaRed)?.get(RedComponent)?.nombre || nuevaRed;
           if (redesDestino.includes(nuevaRed)) {
-            console.log("Se encontró una red destino: ", nuevaRed);
+            console.log(`    ✅ ENCONTRADO! Red destino: ${nombreNuevaRed}`);
             return true;
           }
           if (!redesVisitadas.has(nuevaRed)) {
-            console.log("Agregando nueva red a visitar: ", nuevaRed);
+            console.log(`    ➕ Agregando a cola: ${nombreNuevaRed}`);
             redesVisitadas.add(nuevaRed);
             redesCola.push(nuevaRed);
           }
@@ -145,9 +147,10 @@ console.log("Redes Destino: ", redesDestino);
     }
 
     this.ecsManager.getEntidades().forEach((container, entidad) => {
-      if (container.tiene(RouterComponent)) {
+      // Considerar tanto routers como VPN gateways como puntos de enrutamiento
+      if (container.tiene(RouterComponent) || container.tiene(VPNGatewayComponent)) {
         const redesDelRouter = this.obtenerRedesDelDispositivo(entidad);
-        // Verificar si el router tiene alguna red en común con el dispositivo
+        // Verificar si el router/VPN tiene alguna red en común con el dispositivo
         const redesEnComun = redesDelDispositivo.filter((redId) =>
           redesDelRouter.includes(redId)
         );
@@ -164,9 +167,9 @@ console.log("Redes Destino: ", redesDestino);
   const routersEnRed: Entidad[] = [];
 
   this.ecsManager.getEntidades().forEach((container, entidad) => {
-    // Verificar si la entidad es un router
-    if (container.tiene(RouterComponent)) {
-      // Obtener las redes de este router
+    // Considerar tanto routers como VPN gateways
+    if (container.tiene(RouterComponent) || container.tiene(VPNGatewayComponent)) {
+      // Obtener las redes de este router/VPN
       const redesDelRouter = this.obtenerRedesDelDispositivo(entidad);
       
       // Si el router está conectado a la red que buscamos, lo añadimos
