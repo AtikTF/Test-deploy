@@ -104,6 +104,7 @@ export function EscenarioProvider({ children, initialEscenario = escenarioBase a
                     software: dc.software as string | undefined,
                     posicion,
                     estadoAtaque: dc.estadoAtaque as unknown as EstadoAtaqueDispositivo,
+                    activos: [],
                 };
 
                 // Añadir configuraciones desde WorkstationComponent si existe
