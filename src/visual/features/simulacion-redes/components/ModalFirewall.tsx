@@ -6,6 +6,7 @@ import { ConfiguracionProtocolos } from '../../../../data/configuraciones/config
 import BotonServicioFirewall from './BotonServicioFirewall';
 import type { Entidad } from '../../../../ecs/core';
 import { DireccionTrafico } from '../../../../types/FirewallTypes';
+import { useEscenario } from '../../../common/contexts';
 
 type RedOption = {
     label: string;
@@ -13,8 +14,9 @@ type RedOption = {
 };
 
 export default function ModalFirewall() {
-    const { redesRouter } = useFirewall();
-    
+    const { redesRouter, toggleTodosServicios, obtenerTextoBoton } = useFirewall();
+    const { entidadSeleccionadaId } = useEscenario();
+
     const REDES: RedOption[] = useMemo(() => {
         return redesRouter.map(red => ({
             label: red.nombre,
@@ -39,61 +41,61 @@ export default function ModalFirewall() {
             </div>
 
             <div className={styles.reglasGrid}>
-                    <div className={styles.redSection}>
-                        <div className={styles.direccionGroup}>
-                            <div className={styles.direccionHeader}>
-                                <span className={styles.direccionLabel}>
-                                    <span className={styles.direccionIcon}>←</span>
-                                    Entrante desde
-                                </span>
-                                <button
-                                    className={styles.toggleTodosBtn}
-                                    onClick={() => {}}
-                                >
-                                    Boton
-                                </button>
-                            </div>
-                            <div className={styles.serviciosGrid}>
-                                {ConfiguracionProtocolos.map((protocolo) => (
-                                    <BotonServicioFirewall 
-                                        key={protocolo.protocolo}
-                                        protocolo={protocolo.protocolo}
-                                        label={protocolo.nombre}
-                                        redSeleccionada={redSeleccionada}
-                                        direccion={DireccionTrafico.ENTRANTE}
-                                    />
-                                ))}
-                            </div>
-                            
+                <div className={styles.redSection}>
+                    <div className={styles.direccionGroup}>
+                        <div className={styles.direccionHeader}>
+                            <span className={styles.direccionLabel}>
+                                <span className={styles.direccionIcon}>←</span>
+                                Entrante desde
+                            </span>
+                            <button
+                                className={styles.toggleTodosBtn}
+                                onClick={() => { toggleTodosServicios(entidadSeleccionadaId!, redSeleccionada, DireccionTrafico.ENTRANTE) }}
+                            >
+                                {obtenerTextoBoton(redSeleccionada, DireccionTrafico.ENTRANTE)}
+                            </button>
                         </div>
-                        <div className={styles.separator} />
-                         <div className={styles.direccionGroup}>
-                            <div className={styles.direccionHeader}>
-                                <span className={styles.direccionLabel}>
-                                    <span className={styles.direccionIcon}>→</span>
-                                    Saliente hacia
-                                </span>
-                                <button
-                                    className={styles.toggleTodosBtn}
-                                    onClick={() => {}}
-                                >
-                                    Boton
-                                </button>
-                            </div>
-                            <div className={styles.serviciosGrid}>
-                                {ConfiguracionProtocolos.map((protocolo) => (
-                                    <BotonServicioFirewall 
-                                        key={protocolo.protocolo}
-                                        protocolo={protocolo.protocolo}
-                                        label={protocolo.nombre}
-                                        redSeleccionada={redSeleccionada}
-                                        direccion={DireccionTrafico.SALIENTE}
-                                    />
-                                ))}
-                            </div>
-                            
+                        <div className={styles.serviciosGrid}>
+                            {ConfiguracionProtocolos.map((protocolo) => (
+                                <BotonServicioFirewall
+                                    key={protocolo.protocolo}
+                                    protocolo={protocolo.protocolo}
+                                    label={protocolo.nombre}
+                                    redSeleccionada={redSeleccionada}
+                                    direccion={DireccionTrafico.ENTRANTE}
+                                />
+                            ))}
                         </div>
+
                     </div>
+                    <div className={styles.separator} />
+                    <div className={styles.direccionGroup}>
+                        <div className={styles.direccionHeader}>
+                            <span className={styles.direccionLabel}>
+                                <span className={styles.direccionIcon}>→</span>
+                                Saliente hacia
+                            </span>
+                            <button
+                                className={styles.toggleTodosBtn}
+                                onClick={() => { toggleTodosServicios(entidadSeleccionadaId!, redSeleccionada, DireccionTrafico.SALIENTE) }}
+                            >
+                                {obtenerTextoBoton(redSeleccionada, DireccionTrafico.SALIENTE)}
+                            </button>
+                        </div>
+                        <div className={styles.serviciosGrid}>
+                            {ConfiguracionProtocolos.map((protocolo) => (
+                                <BotonServicioFirewall
+                                    key={protocolo.protocolo}
+                                    protocolo={protocolo.protocolo}
+                                    label={protocolo.nombre}
+                                    redSeleccionada={redSeleccionada}
+                                    direccion={DireccionTrafico.SALIENTE}
+                                />
+                            ))}
+                        </div>
+
+                    </div>
+                </div>
             </div>
 
 

@@ -14,15 +14,21 @@ import VPNIcon from "../../../common/icons/VPNIcon";
 import ModalVPNCliente from "../../simulacion-redes/components/ModalVPNCliente";
 
 function Dispositivos() {
-    const { setDispositivoSeleccionado, dispositivoSeleccionado } = useEscenario();
+    const { setDispositivoSeleccionado, dispositivoSeleccionado, entidadSeleccionadaId } = useEscenario();
     const { openModal } = useModal();
     const { dispositivos } = useDispositivos();
 
     useEffect(() => {
-        if (!dispositivoSeleccionado && dispositivos.length > 0) {
+        if (dispositivos.length === 0) return;
+
+        // Verificar que sea una entidad de la lista
+        const esEntidadValida = entidadSeleccionadaId !== null &&
+            dispositivos.some(d => d.entidadId === entidadSeleccionadaId);
+
+        if (!dispositivoSeleccionado || !esEntidadValida) {
             setDispositivoSeleccionado(dispositivos[0]);
         }
-    }, [dispositivos, dispositivoSeleccionado, setDispositivoSeleccionado]);
+    }, [dispositivos, dispositivoSeleccionado, entidadSeleccionadaId, setDispositivoSeleccionado]);
 
     useEffect(() => {
         if (dispositivoSeleccionado) {
