@@ -1,3 +1,4 @@
+/*  eslint-disable  @typescript-eslint/no-explicit-any */
 import { useNodesState, useEdgesState, ReactFlow } from "@xyflow/react";
 import { TipoDispositivo } from "../../../../types/DeviceEnums";
 import "@xyflow/react/dist/style.css";
@@ -72,7 +73,7 @@ function DeviceNode({ data }: any) {
                 {getIconoNodo(data.tipo)}
                 {!isInternet && redes.length > 0 && (
                     <div className={styles.networkBadges}>
-                        {redes.map((red: any, index: number) => (
+                        {redes.map((red: RedComponent, index: number) => (
                             <div
                                 key={`badge-${red.nombre}-${index}`}
                                 className={styles.networkBadge}
@@ -100,7 +101,7 @@ function DeviceNode({ data }: any) {
 }
 
 // zonas
-function GroupNode({ data }: any) {
+function GroupNode({ data }: { data: { label: string } }) {
     return (
         <div className={styles.groupNode}>
             <div className={styles.groupLabel}>

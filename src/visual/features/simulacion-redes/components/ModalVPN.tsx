@@ -7,8 +7,7 @@ import { useEscenario } from "../../../common/contexts";
 import type { PerfilVPNGateway } from "../../../../types/EscenarioTypes";
 import TrashIcon from "../../../common/icons/TrashIcon";
 import { ZonaComponent } from "../../../../ecs/components/ZonaComponent";
-import { DispositivoComponent, RedComponent, WorkstationComponent } from "../../../../ecs/components";
-import getIconoNodo from "../utils/getIconoNodo";
+import { DispositivoComponent, RedComponent } from "../../../../ecs/components";
 import ComputadoraIcon from "../../../common/icons/ComputadoraIcon";
 
 type OptionItem = { label: string; value: string };

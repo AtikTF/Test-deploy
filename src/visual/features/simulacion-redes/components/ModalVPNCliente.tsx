@@ -8,7 +8,6 @@ import type { PerfilClienteVPN } from "../../../../types/EscenarioTypes";
 import TrashIcon from "../../../common/icons/TrashIcon";
 import { ZonaComponent } from "../../../../ecs/components/ZonaComponent";
 import { DispositivoComponent } from "../../../../ecs/components";
-import getIconoNodo from "../utils/getIconoNodo";
 import ComputadoraIcon from "../../../common/icons/ComputadoraIcon";
 
 type OptionItem = { label: string; value: string };

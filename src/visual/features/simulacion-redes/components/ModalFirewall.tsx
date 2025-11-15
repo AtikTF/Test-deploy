@@ -1,3 +1,4 @@
+/*  eslint-disable  @typescript-eslint/no-explicit-any */
 import { useState, useMemo } from 'react';
 import ComboBox from '../../../common/components/ComboBox';
 import styles from '../styles/ModalFirewall.module.css';
