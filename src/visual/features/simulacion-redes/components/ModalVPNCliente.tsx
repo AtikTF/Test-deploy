@@ -9,6 +9,7 @@ import TrashIcon from "../../../common/icons/TrashIcon";
 import { ZonaComponent } from "../../../../ecs/components/ZonaComponent";
 import { DispositivoComponent } from "../../../../ecs/components";
 import getIconoNodo from "../utils/getIconoNodo";
+import ComputadoraIcon from "../../../common/icons/ComputadoraIcon";
 
 type OptionItem = { label: string; value: string };
 
@@ -231,12 +232,12 @@ function ConfiguracionVpnCliente({ index, proteccion, dominioRemoto, hostRemoto,
     const entidadHost = parseInt(hostRemoto);
     const dispositivoComponent = redController.ecsManager.getComponentes(entidadHost)?.get(DispositivoComponent);
     const nombreHost = dispositivoComponent?.nombre || hostRemoto;
-    const tipoHost = dispositivoComponent?.tipo as any; // necesito ver bien este tipado luego
+    // const tipoHost = dispositivoComponent?.tipo as any; // necesito ver bien este tipado luego
 
     return (
         <div className={styles.configuracionItem}>
             <div className={styles.dispositivoRemotoIcon}>
-                {getIconoNodo(tipoHost)}
+                <ComputadoraIcon size={16} />
             </div>
             <div className={styles.configuracionDetalles}>
                 <div className={styles.configuracionField}>

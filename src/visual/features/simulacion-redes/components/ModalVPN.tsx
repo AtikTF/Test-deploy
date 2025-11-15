@@ -7,8 +7,9 @@ import { useEscenario } from "../../../common/contexts";
 import type { PerfilVPNGateway } from "../../../../types/EscenarioTypes";
 import TrashIcon from "../../../common/icons/TrashIcon";
 import { ZonaComponent } from "../../../../ecs/components/ZonaComponent";
-import { DispositivoComponent, RedComponent } from "../../../../ecs/components";
+import { DispositivoComponent, RedComponent, WorkstationComponent } from "../../../../ecs/components";
 import getIconoNodo from "../utils/getIconoNodo";
+import ComputadoraIcon from "../../../common/icons/ComputadoraIcon";
 
 type OptionItem = { label: string; value: string };
 
@@ -303,7 +304,7 @@ function ConfiguracionVpnGateway({
   const entidadHostLan = parseInt(hostLan);
   const dispositivoLanComponent = redController.ecsManager.getComponentes(entidadHostLan)?.get(DispositivoComponent);
   const nombreHostLan = dispositivoLanComponent?.nombre || hostLan;
-  const tipoHostLan = dispositivoLanComponent?.tipo as any;
+  //const tipoHostLan = dispositivoLanComponent?.tipo as any;
 
   const entidadZonaRemota = parseInt(dominioRemoto);
   const zonaRemotaComponent = redController.ecsManager.getComponentes(entidadZonaRemota)?.get(ZonaComponent);
@@ -312,12 +313,12 @@ function ConfiguracionVpnGateway({
   const entidadHostRemoto = parseInt(hostRemoto);
   const dispositivoRemotoComponent = redController.ecsManager.getComponentes(entidadHostRemoto)?.get(DispositivoComponent);
   const nombreHostRemoto = dispositivoRemotoComponent?.nombre || hostRemoto;
-  const tipoHostRemoto = dispositivoRemotoComponent?.tipo as any;
+  //const tipoHostRemoto = dispositivoRemotoComponent?.tipo as any;
 
   return (
     <div className={styles.configuracionItem}>
       <div className={styles.dispositivoLocalIcon}>
-        {getIconoNodo(tipoHostLan)}
+        <ComputadoraIcon size={16} />
       </div>
       <div className={styles.configuracionDetalles}>
         <div className={styles.configuracionField}>
@@ -339,7 +340,7 @@ function ConfiguracionVpnGateway({
         </div>
       </div>
       <div className={styles.dispositivoRemotoIcon}>
-        {getIconoNodo(tipoHostRemoto)}
+        <ComputadoraIcon size={16} />
       </div>
       <button
         className={styles.deleteButton}
