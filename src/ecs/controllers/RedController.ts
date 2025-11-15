@@ -11,7 +11,7 @@ import {
 } from "../../types/EventosEnums";
 import { AccionFirewall } from "../../types/FirewallTypes";
 import type { DireccionTrafico, Reglas } from "../../types/FirewallTypes";
-import { TipoProtocolo } from "../../types/TrafficEnums";
+import { TipoProtocolo, type RegistroFirewallBloqueado } from "../../types/TrafficEnums";
 import {
   ClienteVPNComponent,
   DispositivoComponent,
@@ -417,7 +417,7 @@ export class RedController {
     return !!reglaEncontrada;
   }
 
-  public obtenerLogsTrafico(entidadRouter: Entidad): any[] {
+  public obtenerLogsTrafico(entidadRouter: Entidad): RegistroFirewallBloqueado[] {
     const router = this.obtenerRouter(entidadRouter);
     return router?.logsTrafico || [];
   }

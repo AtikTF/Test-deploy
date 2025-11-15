@@ -28,21 +28,15 @@ export class SistemaRed extends Sistema {
   public componentesRequeridos = new Set([ActivoComponent, RouterComponent]);
 
   // Servicios especializados
-  private conectividadService: ConectividadService;
-  private eventoService: EventoRedService;
-  private firewallService: FirewallService;
-  private firewallConfigService: FirewallConfigService;
-  private transferenciaService: TransferenciaService;
-  private vpnService: VPNService;
+  private conectividadService: ConectividadService | null = null;
+  private eventoService: EventoRedService | null = null;
+  private firewallService: FirewallService | null = null;
+  private firewallConfigService: FirewallConfigService | null = null;
+  private transferenciaService: TransferenciaService | null = null;
+  private vpnService: VPNService | null = null;
 
   constructor() {
     super();
-    this.eventoService = null as any;
-    this.conectividadService = null as any;
-    this.firewallService = null as any;
-    this.firewallConfigService = null as any;
-    this.transferenciaService = null as any;
-    this.vpnService = null as any;
   }
 
   /*

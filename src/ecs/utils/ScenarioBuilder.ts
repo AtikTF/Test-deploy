@@ -323,7 +323,7 @@ export class ScenarioBuilder {
     };
 
     // Extraer entidades de redes
-    let entidadesRedesDispActual = [];
+    const entidadesRedesDispActual = [];
     for (const [entidadRed, redMap] of reds.entries()) {
       for (const red of d.redes!) {
         if (red == redMap.nombre) entidadesRedesDispActual.push(entidadRed);

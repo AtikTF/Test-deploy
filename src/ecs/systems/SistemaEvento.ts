@@ -92,7 +92,9 @@ export class SistemaEvento extends Sistema {
           };
         };
         const router = containerDispositivo.get(RouterComponent);
-        for (const [, reglas] of router?.bloqueosFirewall.entries()!) {
+        if (!router) return false;
+        
+        for (const [, reglas] of router.bloqueosFirewall.entries()) {
           for (const regla of reglas) {
             if (
               regla.accion === c.val.accion &&
