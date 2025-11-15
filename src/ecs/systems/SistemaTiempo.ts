@@ -31,10 +31,10 @@ export class SistemaTiempo extends Sistema {
     }
 
     // console.log("Pausando tiempo en SistemaTiempo", tiempo);
-    // this.ecsManager.emit(EventosPublicos.TIEMPO_PAUSADO, {
-    //   transcurrido: tiempo.transcurrido,
-    //   pausado: true,
-    // });
+    this.ecsManager.emit(EventosPublicos.TIEMPO_PAUSADO, {
+      transcurrido: tiempo.transcurrido,
+      pausado: true,
+    });
   }
 
   public reanudar(entidad: Entidad) {

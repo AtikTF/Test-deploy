@@ -32,7 +32,7 @@ export const escenarioBase: unknown = {
     {
       nombreEvento: "Reto 2: Asegurar LAN1 (Firewall)",
       tipoEvento: TipoEvento.TRAFICO_RED,
-      tiempoNotificacion: 15, // Segundo reto
+      tiempoNotificacion: 20, // Segundo reto
       descripcion:
         "Se intentará una conexión SSH no autorizada desde la red externa (WWW) a la LAN1. Configura el firewall del 'Router Principal' para bloquear todo el tráfico SSH entrante a LAN1.",
       fase: 1,
@@ -45,7 +45,7 @@ export const escenarioBase: unknown = {
     {
       nombreEvento: "Reto 3: Conexión VPN (Teletrabajo)",
       tipoEvento: TipoEvento.CONEXION_VPN,
-      tiempoNotificacion: 3, // Tercer reto
+      tiempoNotificacion: 35, // Tercer reto
       descripcion:
         "Lisa (Off-site) intentará conectarse a la 'Computadora Jacob' (LAN2) vía VPN. Configura el 'VPN Gateway' y el cliente de Lisa para permitirlo.",
       fase: 1,

@@ -371,10 +371,12 @@ export class SistemaRed extends Sistema {
     entidadVpnGateway: Entidad,
     indexEnTabla: number
   ): void {
-    let actualesPerfilesGateway = this.ecsManager
+    const actualVPNGateway = this.ecsManager
       .getComponentes(entidadVpnGateway)
-      ?.get(VPNGatewayComponent)?.perfilesVPNGateway;
-    actualesPerfilesGateway = actualesPerfilesGateway?.splice(indexEnTabla, 1);
+      ?.get(VPNGatewayComponent);
+    if (actualVPNGateway) {
+      actualVPNGateway.perfilesVPNGateway.splice(indexEnTabla, 1);
+    }
 
     const nombreVPN = this.ecsManager
       .getComponentes(entidadVpnGateway)
@@ -409,10 +411,10 @@ export class SistemaRed extends Sistema {
     entidadClienteVpn: Entidad,
     indexEnTabla: number
   ): void {
-    let actualesPerfilesCliente = this.ecsManager
+    const actualClienteVPN = this.ecsManager
       .getComponentes(entidadClienteVpn)
-      ?.get(ClienteVPNComponent)?.perfilesClienteVPN;
-    actualesPerfilesCliente = actualesPerfilesCliente?.splice(indexEnTabla, 1);
+      ?.get(ClienteVPNComponent);
+    if (actualClienteVPN) actualClienteVPN.perfilesClienteVPN.splice(indexEnTabla, 1);
 
     const nombreCliente = this.ecsManager
       .getComponentes(entidadClienteVpn)

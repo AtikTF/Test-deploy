@@ -17,7 +17,7 @@ import {
   ClienteVPNComponent,
 } from "../components";
 import type { ComponenteContainer, Entidad } from "../core/Componente";
-import { type Dispositivo, type Escenario } from "../../types/EscenarioTypes";
+import { type Activo, type Dispositivo, type Escenario } from "../../types/EscenarioTypes";
 import { SistemaJerarquiaEscenario } from "../systems/SistemaJerarquiaEscenario";
 import {
   TipoAtaque,
@@ -100,7 +100,7 @@ export class ScenarioBuilder {
       // Verificar si la zona tiene routers
       const tieneRouters = this.zonaTieneRouters(z);
 
-      let redesConEntidades = new Map<
+      const redesConEntidades = new Map<
         Entidad,
         { nombre: string; color: string }
       >();
@@ -398,7 +398,7 @@ export class ScenarioBuilder {
     return entidadDispositivo;
   }
 
-  crearActivos(entidadDispositivo: number, activos: any) {
+  crearActivos(entidadDispositivo: number, activos: Activo[]) {
     const activoComponente = new ActivoComponent();
     activoComponente.activos = activos;
     this.ecsManager.agregarComponente(entidadDispositivo, activoComponente);

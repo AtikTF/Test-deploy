@@ -453,10 +453,10 @@ export class RedController {
   }
 
   getDispositivosPorZona(entidadZona: Entidad): Entidad[] | undefined {
-    let worksYServersDeZona: Entidad[] = [];
+    const worksYServersDeZona: Entidad[] = [];
     for (const entidadDispositivo of this.sistemaJerarquia?.obtenerDispositivosDeZona(
       entidadZona
-    )!) {
+    ) ?? []) {
       const tipoDispositivo = this.ecsManager
         .getComponentes(entidadDispositivo)
         ?.get(DispositivoComponent)?.tipo;
@@ -480,7 +480,7 @@ export class RedController {
 
   // Se pasa el id del dispositivo actual para filtrar su zona y que solo devuelva las zonas remotas
   getDominiosRemotos(entidadDispositivo: Entidad): Entidad[] {
-    let dominiosRemotos: Entidad[] = [];
+    const dominiosRemotos: Entidad[] = [];
     const entidadZonaActual =
       this.sistemaJerarquia?.obtenerZonaDeDispositivo(entidadDispositivo);
     const entidadEscenario = this.sistemaJerarquia?.obtenerEscenarioDeZona(
@@ -489,7 +489,7 @@ export class RedController {
 
     for (const entidadZona of this.sistemaJerarquia?.obtenerZonasDeEscenario(
       entidadEscenario!
-    )!) {
+    ) ?? []) {
       if (entidadZona != entidadZonaActual) dominiosRemotos.push(entidadZona);
     }
 
