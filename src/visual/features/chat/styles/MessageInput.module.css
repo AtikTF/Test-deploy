@@ -21,6 +21,7 @@
   background-color: transparent;
   color: var(--text-primary);
 }
+
 .contextButton {
   color: var(--text-primary);
   display: flex;
@@ -33,14 +34,23 @@
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
+
 .contextActive {
   background-color: var(--blue-transparent);
   color: var(--blue);
   border: 1px solid transparent;
 }
+
+.audioPlaying {
+  background-color: var(--blue-transparent);
+  color: var(--blue);
+  border: 1px solid transparent;
+}
+
 .contextButton:hover {
   filter: brightness(1.2);
 }
+
 .inputActions {
   display: flex;
   padding-top: 8px;
@@ -48,6 +58,7 @@
   justify-content: space-between;
   width: 100%;
 }
+
 .messageInput:focus {
   outline: none;
 }
@@ -77,11 +88,13 @@
   justify-content: center;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .sendButton:hover:not(:disabled) {
   background: var(--blue);
   color: var(--text-primary);
   border: 1px solid var(--blue-lighter) !important;
 }
+
 .sendButton:disabled {
   cursor: not-allowed;
   opacity: 0.5;
