@@ -1,6 +1,6 @@
 export interface Estudiante {
   id_estudiante: number
-  id_profesor?: number
+  id_profesor: number
   codigo_unico: number
   primernombre: string
   segundo_nombre: string
