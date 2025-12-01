@@ -4,7 +4,7 @@ import ObjetivoItem from '../components/ObjetivoItem';
 import styles from '../styles/VistaFasesPartida.module.css';
 
 export default function VistaFasesPartida() {
-    const { fases, faseActual, faseActualIndex, navegarAFase } = useFases();
+    const { fases, faseActual, faseActualIndex } = useFases();
 
     if (!faseActual) {
         return <div>No hay fases disponibles</div>;
@@ -16,7 +16,7 @@ export default function VistaFasesPartida() {
                 totalFases={fases.length}
                 faseActual={faseActualIndex}
                 fasesCompletadas={fases.map((f) => f.completada)}
-                onFaseClick={navegarAFase}
+                onFaseClick={() => {}} // Phase navigation controlled by ECS
             />
 
             <div className={styles.faseActual}>

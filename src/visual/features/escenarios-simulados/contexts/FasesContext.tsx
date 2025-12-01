@@ -1,8 +1,10 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { EscenarioController } from '../../../../ecs/controllers/EscenarioController';
+import type { FaseComponent } from '../../../../ecs/components/FaseComponent';
+import { EventosPublicos } from '../../../../types/EventosEnums';
 
 export interface Objetivo {
-    id: string;
     descripcion: string;
     completado: boolean;
 }
@@ -13,15 +15,13 @@ export interface Fase {
     descripcion: string;
     objetivos: Objetivo[];
     completada: boolean;
+    faseActual: boolean;
 }
 
 interface FasesContextType {
     fases: Fase[];
     faseActualIndex: number;
-    completarObjetivo: (faseId: number, objetivoId: string) => void;
-    avanzarFase: () => void;
-    retrocederFase: () => void;
-    navegarAFase: (index: number) => void;
+    actualizarFases: () => void;
 }
 
 const FasesContext = createContext<FasesContextType | undefined>(undefined);
@@ -39,108 +39,87 @@ interface FasesProviderProps {
 }
 
 export const FasesProvider = ({ children }: FasesProviderProps) => {
-    // Datos quemados por ahora
-    const [fases, setFases] = useState<Fase[]>([
-        {
-            id: 1,
-            nombre: 'Fase 1',
-            descripcion: 'Configuración inicial del entorno de red',
-            objetivos: [
-                { id: '1-1', descripcion: 'Configurar el router principal', completado: true },
-                { id: '1-2', descripcion: 'Establecer las subredes', completado: true },
-                { id: '1-3', descripcion: 'Lo que sea', completado: true },
-            ],
-            completada: true,
-        },
-        {
-            id: 2,
-            nombre: 'Fase 2',
-            descripcion: 'Implementación de seguridad básica',
-            objetivos: [
-                { id: '2-1', descripcion: 'Configurar firewall básico', completado: true },
-                { id: '2-2', descripcion: 'Establecer políticas de acceso', completado: true },
-            ],
-            completada: true,
-        },
-        {
-            id: 3,
-            nombre: 'Asegurar la comunicación de Harry y Lisa por Internet',
-            descripcion: 'Asegurar la comunicación de Harry y Lisa por Internet',
-            objetivos: [
-                {
-                    id: '3-1',
-                    descripcion: 'Cuando Lisa accede a la Planificación de Marketing por Internet, ¿cómo puedes asegurarte que es realmente Lisa haciendo las modificaciones? ¿Y si atacantes secuestran su sesión de red?',
-                    completado: true,
-                },
-                {
-                    id: '3-2',
-                    descripcion: 'Después de asegurar las comunicaciones por Internet, ponga en funcionamiento presionando el botón de reproducir y ejecute por un tiempo. La simulación continuará sin interrupciones si las medidas de seguridad son suficientes.',
-                    completado: false,
-                },
-            ],
-            completada: false,
-        },
-        {
-            id: 4,
-            nombre: 'Fase 4',
-            descripcion: 'Auditoría y optimización final',
-            objetivos: [
-                { id: '4-1', descripcion: 'Realizar auditoría de seguridad', completado: false },
-                { id: '4-2', descripcion: 'Optimizar el rendimiento de red', completado: false },
-            ],
-            completada: false,
-        },
-    ]);
+    const [fases, setFases] = useState<Fase[]>([]);
+    const [faseActualIndex, setFaseActualIndex] = useState(0);
 
-    const [faseActualIndex, setFaseActualIndex] = useState(2); // Fase 3 es el índice 2
+    const convertirFaseComponentAFase = (faseComponent: FaseComponent): Fase => {
+        return {
+            id: faseComponent.id,
+            nombre: faseComponent.nombre,
+            descripcion: faseComponent.descripcion,
+            objetivos: faseComponent.objetivos.map((obj) => ({
+                descripcion: obj.descripcion,
+                completado: obj.completado,
+            })),
+            completada: faseComponent.completada,
+            faseActual: faseComponent.faseActual,
+        };
+    };
 
-    const completarObjetivo = (faseId: number, objetivoId: string) => {
-        setFases((prevFases) =>
-            prevFases.map((fase) => {
-                if (fase.id === faseId) {
-                    const nuevosObjetivos = fase.objetivos.map((obj) =>
-                        obj.id === objetivoId ? { ...obj, completado: !obj.completado } : obj
-                    );
-                    const todosCompletados = nuevosObjetivos.every((obj) => obj.completado);
-                    return {
-                        ...fase,
-                        objetivos: nuevosObjetivos,
-                        completada: todosCompletados,
-                    };
+    const actualizarFases = () => {
+        try {
+            const controller = EscenarioController.getInstance();
+            const fasesECS = controller.getFasesConObjetivos();
+
+            if (fasesECS && fasesECS.length > 0) {
+                const fasesConvertidas = fasesECS.map(convertirFaseComponentAFase);
+                setFases(fasesConvertidas);
+
+                // Encontrar el índice de la fase actual
+                const indexActual = fasesConvertidas.findIndex((f) => f.faseActual);
+                if (indexActual !== -1) {
+                    setFaseActualIndex(indexActual);
                 }
-                return fase;
-            })
-        );
-    };
-
-    const avanzarFase = () => {
-        if (faseActualIndex < fases.length - 1) {
-            setFaseActualIndex(faseActualIndex + 1);
+            }
+        } catch (error) {
+            console.error('Error al obtener fases del controlador:', error);
         }
     };
 
-    const retrocederFase = () => {
-        if (faseActualIndex > 0) {
-            setFaseActualIndex(faseActualIndex - 1);
-        }
-    };
+    useEffect(() => {
+        actualizarFases();
 
-    const navegarAFase = (index: number) => {
-        // Solo permitir navegar a fases completadas o la fase actual
-        if (index <= faseActualIndex || fases[index - 1]?.completada) {
-            setFaseActualIndex(index);
+        try {
+            const controller = EscenarioController.getInstance();
+            
+            const unsubscribeAtaqueMitigado = controller.on(EventosPublicos.ATAQUE_MITIGADO, () => {
+                setTimeout(() => actualizarFases(), 100);
+            });
+
+            const unsubscribeFaseCompletada = controller.on(EventosPublicos.FASE_COMPLETADA, () => {
+                setTimeout(() => actualizarFases(), 100);
+            });
+
+            const unsubscribeObjetivoCompletado = controller.on('objetivo:completado' as EventosPublicos, () => {
+                setTimeout(() => actualizarFases(), 100);
+            });
+
+            const unsubscribeFaseNoCompletada = controller.on(EventosPublicos.FASE_NO_COMPLETADA, () => {
+                setTimeout(() => actualizarFases(), 100);
+            });
+
+            const unsubscribeEscenarioCompletado = controller.on(EventosPublicos.ESCENARIO_COMPLETADO, () => {
+                setTimeout(() => actualizarFases(), 100);
+            });
+
+            return () => {
+                unsubscribeAtaqueMitigado();
+                unsubscribeFaseCompletada();
+                unsubscribeObjetivoCompletado();
+                unsubscribeFaseNoCompletada();
+                unsubscribeEscenarioCompletado();
+            };
+        } catch (error) {
+            console.error('Error al suscribirse a eventos del controlador:', error);
         }
-    };
+    }, []);
 
     return (
         <FasesContext.Provider
             value={{
                 fases,
                 faseActualIndex,
-                completarObjetivo,
-                avanzarFase,
-                retrocederFase,
-                navegarAFase,
+                actualizarFases,
             }}
         >
             {children}
