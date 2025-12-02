@@ -28,6 +28,7 @@ export interface EscenarioPreview {
   id: number;
   titulo: string;
   descripcion: string;
+  imagenPreview?: string;
 }
 
 export interface Zona {

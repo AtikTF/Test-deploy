@@ -13,6 +13,7 @@ export class NivelController {
         id: e.id,
         titulo: e.titulo,
         descripcion: e.descripcion,
+        imagenPreview: e.imagenPreview,
       });
     });
 
