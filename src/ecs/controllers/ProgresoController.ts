@@ -58,15 +58,12 @@ export class ProgresoController {
       intentos: number;
   } | null> {
 
-    const data = {id_estudiante: id_estudiante, id_escenario: id_escenario};
-
     try {
       const response = await fetch(`${this.API_URL}/progreso/estudiante/${id_estudiante}/escenario/${id_escenario}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
       });
 
       const contentType = response.headers.get("content-type");
