@@ -25,13 +25,13 @@ export class PrismaProgresoRepository implements IProgresoRepository {
             },
         });
 
-        const terminado = await prisma.progreso.findFirst({
+        const terminado = await prisma.progreso.findFirst({ 
+            select: {
+                terminado: true, 
+            },
             where: {
                 id_estudiante: idEstudiante,
                 id_escenario: idEscenario,
-                terminado: true,
-            },
-            select: {
                 terminado: true,
             },
         });

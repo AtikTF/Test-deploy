@@ -72,8 +72,7 @@ export class ProgresoController {
         return null;
       }
 
-      const respuesta: unknown = response;
-      return respuesta as {terminado: boolean; intentos: number;};
+      return await response.json();
 
     } catch (err) {
       console.error("Error completo:", err);
