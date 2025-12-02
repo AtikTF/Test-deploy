@@ -1,7 +1,6 @@
 export class ProgresoController {
  
   private API_URL = "/api";
-  private BACKEND_URL = "http://localhost:3000";
 
   private static instance: ProgresoController | null = null;
 
@@ -23,7 +22,6 @@ export class ProgresoController {
     };
 
     try {
-      console.log("Enviando datos:", data);
       const response = await fetch(`${this.API_URL}/progreso`, {
         method: "POST",
         headers: {
@@ -40,8 +38,6 @@ export class ProgresoController {
         );
         return null;
       }
-
-      console.log("Registro de progreso exitoso.");
 
     } catch (err) {
       console.error("Error completo:", err);
