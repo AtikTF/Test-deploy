@@ -1,5 +1,6 @@
 .authContainer {
   min-height: 100vh;
+  height: 100vh;
   display: grid;
   overflow: hidden;
   grid-template-columns: 1fr 1fr;
@@ -12,6 +13,8 @@
   flex-direction: column;
   justify-content: space-between;
   position: relative;
+  overflow-y: auto;
+  height: 100vh;
 }
 
 .logo {
@@ -219,6 +222,8 @@
 
   .leftPanel {
     padding: 24px;
+    height: auto;
+    min-height: 100vh;
   }
 
   .authCard {

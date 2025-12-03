@@ -45,6 +45,9 @@ export function EscenarioProvider({ children, initialEscenario }: EscenarioProvi
     useEffect(() => {
         if (selectedEscenario) {
             setEscenarioState(selectedEscenario);
+            // Resetear dispositivo seleccionado al cambiar de escenario
+            setDispositivoSeleccionadoState(null);
+            setEntidadSeleccionadaId(null);
         }
     }, [selectedEscenario]);
 

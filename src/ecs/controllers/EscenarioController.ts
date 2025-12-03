@@ -61,7 +61,11 @@ export class EscenarioController {
         );
       }
       EscenarioController.instance = new EscenarioController(escenario);
+    } else if (escenario && escenario.id !== EscenarioController.instance.escenario.id) {
+      // Si es un escenario diferente, resetear completamente la instancia
+      EscenarioController.instance = new EscenarioController(escenario);
     } else if (escenario) {
+      // Si es el mismo escenario, solo actualizar la referencia
       EscenarioController.instance.escenario = escenario;
     }
     return EscenarioController.instance;

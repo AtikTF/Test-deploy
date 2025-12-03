@@ -58,6 +58,7 @@ export function useECSScene() {
   const inicializado = useRef(false);
   const tiempoIniciadoRef = useRef(false);
   const lastSeenCountRef = useRef(0);
+  const escenarioIdRef = useRef<number | null>(null);
 
   const escenarioController = useMemo(
     () => EscenarioController.getInstance(escenario),
@@ -68,6 +69,13 @@ export function useECSScene() {
     () => RedController.getInstance(escenarioController.ecsManager),
     [escenarioController]
   );
+
+  // Detectar cambio de escenario y resetear el estado de inicialización
+  if (escenarioIdRef.current !== escenario.id) {
+    escenarioIdRef.current = escenario.id;
+    inicializado.current = false;
+    tiempoIniciadoRef.current = false;
+  }
 
   // Función helper para formatear tiempo
   const formatearTiempo = (segundos: number): string => {
@@ -119,6 +127,12 @@ export function useECSScene() {
     }
 
     inicializado.current = true;
+
+    // Resetear todos los estados al inicializar un nuevo escenario
+    setLogs([]);
+    setMostrarNuevoLog(false);
+    setTiempoTranscurrido(0);
+    lastSeenCountRef.current = 0;
 
     // PRIMERO: Inicializar el escenario
     escenarioController.iniciarEscenario();
