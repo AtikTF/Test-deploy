@@ -19,10 +19,14 @@ const Login = () => {
             contrasenia: password,
         });
 
-        if (result?.success) {
+        if (result?.success && result.data) {
             setIsExiting(true);
+            const destination = result.data.role === 'profesor' 
+                ? '/docente' 
+                : '/seleccion-niveles';
+            
             setTimeout(() => {
-                navigate('/');
+                navigate(destination);
             }, 700);
         }
     };

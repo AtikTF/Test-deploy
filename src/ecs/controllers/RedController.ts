@@ -57,7 +57,11 @@ export class RedController {
         );
       }
       RedController.instance = new RedController(ecsManager);
+    } else if (ecsManager && ecsManager !== RedController.instance.ecsManager) {
+      // Si es un ECSManager diferente, crear una nueva instancia
+      RedController.instance = new RedController(ecsManager);
     } else if (ecsManager) {
+      // Si es el mismo ECSManager, solo actualizar la referencia
       RedController.instance.ecsManager = ecsManager;
     }
     return RedController.instance;

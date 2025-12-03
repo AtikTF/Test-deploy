@@ -24,6 +24,7 @@ import {
   MensajesGenerales,
   TipoLogGeneral,
 } from "../../types/EventosEnums";
+import { ProgresoController } from "./ProgresoController";
 
 export class EscenarioController {
   public escenario: Escenario;
@@ -31,12 +32,14 @@ export class EscenarioController {
   public builder!: ScenarioBuilder;
 
   private entidadTiempo?: Entidad;
+  private entidadTiempoTotal?: Entidad;
   private sistemaTiempo?: SistemaTiempo;
   private sistemaPresupuesto?: SistemaPresupuesto;
   private sistemaJerarquiaEscenario?: SistemaJerarquiaEscenario;
   private entidadPresupuesto?: Entidad;
   private sistemaEvento?: SistemaEvento;
   private sistemaFase?: SistemaFase;
+  private progresoController?: ProgresoController;
   private escenarioIniciado: boolean = false; // FLAG PARA EVITAR MÚLTIPLES INICIALIZACIONES
 
   private static instance: EscenarioController | null = null;
@@ -58,7 +61,11 @@ export class EscenarioController {
         );
       }
       EscenarioController.instance = new EscenarioController(escenario);
+    } else if (escenario && escenario.id !== EscenarioController.instance.escenario.id) {
+      // Si es un escenario diferente, resetear completamente la instancia
+      EscenarioController.instance = new EscenarioController(escenario);
     } else if (escenario) {
+      // Si es el mismo escenario, solo actualizar la referencia
       EscenarioController.instance.escenario = escenario;
     }
     return EscenarioController.instance;
@@ -82,6 +89,10 @@ export class EscenarioController {
       this.sistemaFase = new SistemaFase();
       this.ecsManager.agregarSistema(this.sistemaFase);
       this.sistemaFase.iniciarEscuchaDeEvento();
+    }
+
+    if (!this.progresoController) {
+      this.progresoController = ProgresoController.getInstance();
     }
 
     // NO emitir el evento aquí - lo haremos después de que los sistemas se suscriban
@@ -178,16 +189,14 @@ export class EscenarioController {
       this.agregarLogGeneralEscenario(log);
     });
 
-    // Oyentes de prueba que en realidad se colocan en el front, borrar luego
-    this.ecsManager.on(EventosPublicos.FASE_NO_COMPLETADA, (data: unknown) => {
-        const d = data as string;
-        console.log(d);
+    // Oyentes para guardar el progreso
+    this.ecsManager.on(EventosPublicos.FASE_NO_COMPLETADA, () => {
+        this.progresoController?.guardarProgresoEstudiante(false, this.getTiempoTotalTranscurrido()); 
         this.sistemaTiempo?.destruir();
     });
 
-    this.ecsManager.on(EventosPublicos.ESCENARIO_COMPLETADO, (data: unknown) => {
-        const d = data as string;
-        console.log(d);
+    this.ecsManager.on(EventosPublicos.ESCENARIO_COMPLETADO, () => {
+        this.progresoController?.guardarProgresoEstudiante(true, this.getTiempoTotalTranscurrido()); 
         this.sistemaTiempo?.destruir();
     });
 
@@ -225,10 +234,16 @@ export class EscenarioController {
   }
 
   public ejecutarTiempo(): void {
-    if (!this.entidadTiempo) {
+    if (!this.entidadTiempo || !this.entidadTiempoTotal) {
       this.entidadTiempo = this.ecsManager.agregarEntidad();
       this.ecsManager.agregarComponente(
         this.entidadTiempo,
+        new TiempoComponent()
+      );
+
+      this.entidadTiempoTotal = this.ecsManager.agregarEntidad();
+      this.ecsManager.agregarComponente(
+        this.entidadTiempoTotal,
         new TiempoComponent()
       );
 
@@ -237,11 +252,12 @@ export class EscenarioController {
     }
   }
   public iniciarTiempo(): void {
-    if (!this.sistemaTiempo || !this.entidadTiempo) {
+    if (!this.sistemaTiempo || !this.entidadTiempo || !this.entidadTiempoTotal) {
       console.error("Sistema de tiempo no inicializado");
       return;
     }
     this.sistemaTiempo.iniciar(this.entidadTiempo);
+    this.sistemaTiempo.iniciarTiempoTotal(this.entidadTiempoTotal);
   }
 
   public pausarTiempo(): void {
@@ -279,6 +295,18 @@ export class EscenarioController {
     }
 
     const cont = this.ecsManager.getComponentes(this.entidadTiempo);
+    if (!cont) return 0;
+
+    const tiempo = cont.get(TiempoComponent);
+    return tiempo?.transcurrido ?? 0;
+  }
+
+  private getTiempoTotalTranscurrido(): number {
+    if (!this.ecsManager || !this.entidadTiempoTotal) {
+      return 0;
+    }
+
+    const cont = this.ecsManager.getComponentes(this.entidadTiempoTotal);
     if (!cont) return 0;
 
     const tiempo = cont.get(TiempoComponent);

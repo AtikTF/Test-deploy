@@ -4,6 +4,7 @@ import { EscenarioController } from '../../../../ecs/controllers/EscenarioContro
 import type { FaseComponent } from '../../../../ecs/components/FaseComponent';
 import { EventosPublicos, MensajesGenerales } from '../../../../types/EventosEnums';
 import { useModal } from '../../../common/contexts/ModalContext';
+import { useEscenarioActual } from '../../../common/contexts/EscenarioContext';
 import ModalResultadoFase from '../components/ModalResultadoFase';
 
 export interface Objetivo {
@@ -44,6 +45,7 @@ export const FasesProvider = ({ children }: FasesProviderProps) => {
     const [fases, setFases] = useState<Fase[]>([]);
     const [faseActualIndex, setFaseActualIndex] = useState(0);
     const { openModal } = useModal();
+    const escenario = useEscenarioActual();
 
     const convertirFaseComponentAFase = (faseComponent: FaseComponent): Fase => {
         return {
@@ -80,6 +82,10 @@ export const FasesProvider = ({ children }: FasesProviderProps) => {
     };
 
     useEffect(() => {
+        // Resetear estados al cambiar de escenario
+        setFases([]);
+        setFaseActualIndex(0);
+
         actualizarFases();
 
         try {
@@ -130,7 +136,7 @@ export const FasesProvider = ({ children }: FasesProviderProps) => {
         } catch (error) {
             console.error('Error al suscribirse a eventos del controlador:', error);
         }
-    }, [openModal]);
+    }, [openModal, escenario.id]);
 
     return (
         <FasesContext.Provider

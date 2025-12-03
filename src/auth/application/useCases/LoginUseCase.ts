@@ -1,6 +1,6 @@
-import type { IAuthRepository } from "../../domain/repositories/IAuthRepository"
-import type { EstudiantePublic } from "../../domain/models/Estudiante"
-import type { ProfesorPublic } from "../../domain/models/Profesor"
+import type { IAuthRepository } from "../../domain/repositories/IAuthRepository.js"
+import type { EstudiantePublic } from "../../domain/models/Estudiante.js"
+import type { ProfesorPublic } from "../../domain/models/Profesor.js"
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 
@@ -30,7 +30,7 @@ export class LoginUseCase {
         const token = jwt.sign(
           { id: profesor.id_profesor, role: "profesor" },
           this.jwtSecret,
-          { expiresIn: "7d" }
+          { expiresIn: "1h" }
         )
 
         return {
@@ -52,7 +52,7 @@ export class LoginUseCase {
         const token = jwt.sign(
           { id: estudiante.id_estudiante, role: "estudiante" },
           this.jwtSecret,
-          { expiresIn: "7d" }
+          { expiresIn: "1h" }
         )
 
         return {
