@@ -55,8 +55,19 @@ export default function VistaDetalleEstudiante() {
         setExpandedEscenario(expandedEscenario === escenarioId ? null : escenarioId);
     };
 
-    const getProgresosPorEscenario = (escenarioId: number) => {
-        return progresos.filter(p => p.id_escenario === escenarioId);
+    const getProgresosPorEscenario = (escenarioTitulo: string) => {
+        const exactMatch = progresos.filter(p => p.nombre_escenario === escenarioTitulo);
+        if (exactMatch.length > 0) return exactMatch;
+        
+        const caseInsensitiveMatch = progresos.filter(p => 
+            p.nombre_escenario.toLowerCase() === escenarioTitulo.toLowerCase()
+        );
+        if (caseInsensitiveMatch.length > 0) return caseInsensitiveMatch;
+        
+        return progresos.filter(p => 
+            p.nombre_escenario.toLowerCase().includes(escenarioTitulo.toLowerCase()) ||
+            escenarioTitulo.toLowerCase().includes(p.nombre_escenario.toLowerCase())
+        );
     };
 
     const formatearTiempo = (segundos: number) => {
@@ -89,7 +100,7 @@ export default function VistaDetalleEstudiante() {
                         <h2>Escenarios</h2>
                         <div className={styles.escenariosList}>
                             {escenarios.map((escenario: Escenario) => {
-                                const progresosEscenario = getProgresosPorEscenario(escenario.id);
+                                const progresosEscenario = getProgresosPorEscenario(escenario.titulo);
                                 const completado = progresosEscenario.some(p => p.terminado);
                                 const intentos = progresosEscenario.length;
                                 const isExpanded = expandedEscenario === escenario.id;
@@ -150,7 +161,7 @@ export default function VistaDetalleEstudiante() {
                                                                         height="16"
                                                                         viewBox="0 0 24 24"><path fill="currentColor"
                                                                             d="M12 21a8 8 0 1 1 8-8a8.01 8.01 0 0 1-8 8Zm0-14a6 6 0 1 0 6 6a6.007 6.007 0 0 0-6-6Zm1 7h-2V9h2v5Zm6.293-6.293l-2-2l1.414-1.414l2 2l-1.413 1.413l-.001.001ZM15 4H9V2h6v2Z" /></svg>
-                                                                    <span>{formatearTiempo(progreso.tiempo)}</span>
+                                                                    <span>{progreso.tiempo !== null ? formatearTiempo(progreso.tiempo) : 'N/A'}</span>
                                                                 </div>
 
                                                             </div>

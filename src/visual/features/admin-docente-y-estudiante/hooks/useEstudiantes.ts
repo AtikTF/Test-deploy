@@ -16,10 +16,10 @@ interface Estudiante {
 interface Progreso {
   id_progreso: number;
   id_estudiante: number;
-  id_escenario: number;
+  nombre_escenario: string;
   terminado: boolean;
-  tiempo: number;
-  fecha_creacion: string;
+  tiempo: number | null;
+  fecha_creacion?: string;
 }
 
 export const useEstudiantes = (idProfesor: number | null) => {
