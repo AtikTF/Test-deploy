@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-
-const API_URL = "/api";
+import { NivelController } from "../../../../ecs/controllers/NivelController";
 
 interface Escenario {
   id: number;
   titulo: string;
   descripcion: string;
-  imagenPreview: string;
+  imagenPreview?: string;
 }
 
 export const useEscenarios = () => {
@@ -15,22 +14,17 @@ export const useEscenarios = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchEscenarios = async () => {
+    const fetchEscenarios = () => {
       setLoading(true);
       setError(null);
 
       try {
-        const response = await fetch(`${API_URL}/escenarios`);
-
-        if (!response.ok) {
-          throw new Error("Error al obtener escenarios");
-        }
-
-        const result = await response.json();
-        setEscenarios(result.data || []);
+        const nivelController = new NivelController();
+        const result = nivelController.getEscenarios();
+        setEscenarios(result || []);
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "Error de conexión";
+          err instanceof Error ? err.message : "Error al cargar escenarios";
         setError(errorMessage);
       } finally {
         setLoading(false);

@@ -4,7 +4,6 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import authRouter from './auth/infrastructure/controllers/AuthController.js'
 import progresoRouter from './auth/infrastructure/controllers/ProgresoController.js'
-import escenariosRouter from './ecs/controllers/EscenariosController'
 
 // Cargar variables de entorno
 dotenv.config()
@@ -30,19 +29,18 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', message: 'Server is running' })
 })
 
 // Root endpoint
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({ 
     message: 'API de CiberSeguridad Game',
     version: '1.0.0',
     endpoints: {
       auth: '/auth',
       progreso: '/progreso',
-      escenarios: '/escenarios',
       health: '/health'
     }
   })
@@ -51,10 +49,9 @@ app.get('/', (req, res) => {
 // Montar rutas de autenticación
 app.use('/auth', authRouter)
 app.use('/progreso', progresoRouter)
-app.use('/escenarios', escenariosRouter)
 
 // Manejo de rutas no encontradas
-app.use((req, res) => {
+app.use((_req, res) => {
   res.status(404).json({ 
     success: false, 
     error: 'Ruta no encontrada' 
@@ -62,7 +59,7 @@ app.use((req, res) => {
 })
 
 // Manejo de errores global
-app.use((err: unknown, req: express.Request, res: express.Response) => {
+app.use((err: unknown, _req: express.Request, res: express.Response) => {
   console.error('Error no manejado:', err)
   res.status(500).json({ 
     success: false, 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useProgresoEstudiante } from '../hooks/useEstudiantes';
+import { NivelController } from '../../../../ecs/controllers/NivelController';
 import styles from '../styles/VistaDetalleEstudiante.module.css';
 
 // Hook para obtener escenarios
@@ -10,16 +11,15 @@ const useEscenarios = () => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const fetchEscenarios = async () => {
+        const fetchEscenarios = () => {
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch("/api/escenarios");
-                if (!response.ok) throw new Error("Error al obtener escenarios");
-                const result = await response.json();
-                setEscenarios(result.data || []);
+                const nivelController = new NivelController();
+                const result = nivelController.getEscenarios();
+                setEscenarios(result || []);
             } catch (err) {
-                setError(err instanceof Error ? err.message : "Error de conexión");
+                setError(err instanceof Error ? err.message : "Error al cargar escenarios");
             } finally {
                 setLoading(false);
             }
@@ -34,7 +34,7 @@ interface Escenario {
     id: number;
     titulo: string;
     descripcion: string;
-    imagenPreview: string;
+    imagenPreview?: string;
 }
 
 export default function VistaDetalleEstudiante() {

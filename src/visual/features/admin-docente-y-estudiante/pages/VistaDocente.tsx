@@ -9,7 +9,7 @@ export default function VistaDocente() {
     const user = getUser();
     const role = getUserRole();
 
-    const idProfesor = role === 'profesor' && user ? (user as any).id_profesor : null;
+    const idProfesor = role === 'profesor' && user ? (user as { id_profesor: number }).id_profesor : null;
     const { estudiantes, loading, error } = useEstudiantes(idProfesor);
 
     const handleLogout = () => {
