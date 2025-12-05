@@ -9,7 +9,7 @@ import progresoRouter from './auth/infrastructure/controllers/ProgresoController
 dotenv.config()
 
 const app = express()
-const PORT = process.env.PORT || 3000 // Azure asigna puerto dinámico
+const PORT = Number(process.env.PORT) || 3000 // Azure asigna puerto dinámico
 
 // Middlewares - CORS configurado para producción
 const allowedOrigins = [
@@ -68,7 +68,7 @@ app.use((err: unknown, _req: express.Request, res: express.Response) => {
 })
 
 // Iniciar servidor
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0',() => {
   console.log(`Servidor corriendo en puerto ${PORT}`)
   console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`)
 })
