@@ -1,5 +1,6 @@
 // src/server.ts
 import express from 'express'
+import type { Request, Response } from "express";
 import cors from 'cors'
 import dotenv from 'dotenv'
 import authRouter from './auth/infrastructure/controllers/AuthController.js'
@@ -29,12 +30,12 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // Health check
-app.get('/health', (_req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running' })
 })
 
 // Root endpoint
-app.get('/', (_req, res) => {
+app.get('/', (_req: Request, res: Response) => {
   res.json({ 
     message: 'API de CiberSeguridad Game',
     version: '1.0.0',
@@ -51,7 +52,7 @@ app.use('/auth', authRouter)
 app.use('/progreso', progresoRouter)
 
 // Manejo de rutas no encontradas
-app.use((_req, res) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({ 
     success: false, 
     error: 'Ruta no encontrada' 
